@@ -24,7 +24,7 @@ def rho(x, obs):
 #定义梯度函数define gradient function
 def grad_U_pot(x,x_goal,obs,rho_0):
     grad_U_attr = K_attr * (x - x_goal)
-    grad_U_obs = np.zeros_like(x, dtype=np.float64)
+    grad_U_obs = np.zeros_like(x,dtype=float)
     for ob in obs:
         rho_x = rho(x, ob)
         if rho_x <= rho_0:
