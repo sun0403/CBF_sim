@@ -113,7 +113,7 @@ while running:
         desired_goal[1] -= particle_speed * delta_t
     if keys[pygame.K_DOWN]:
         desired_goal[1] += particle_speed * delta_t
-
+#
     # 确保粒子保持在屏幕边界内
     desired_goal[0] = np.clip(desired_goal[0], 0, screen_width)
     desired_goal[1] = np.clip(desired_goal[1], 0, screen_height)
