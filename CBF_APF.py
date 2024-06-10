@@ -3,7 +3,7 @@ import numpy as np
 import cvxpy as cp
 import time
 import APF
-#随机障碍
+#随机障碍##
 def generate_random_obstacles(num_obstacles, field_size=5):
     obstacles = []
     for _ in range(num_obstacles):
