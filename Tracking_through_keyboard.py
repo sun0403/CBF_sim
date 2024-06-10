@@ -35,7 +35,7 @@ ax.legend()
 def update_plot():
     global path_line, goal_point, x_goal
     print(f"Calculating path to new goal: {x_goal}")  # 打印目标点
-    #path, final_time, times = APF.find_path(x_start, x_goal, rho_01,obstacles)
+    path, final_time, times = APF.find_path(x_start, x_goal, rho_01,obstacles)
     #path, final_time, times = CBF.find_path_qp(x_start, x_goal, obstacles, alpha=2)
     #path,final_time,times=CBF_APF.find_path_v_star(x_start,x_goal,obstacles,rho_01,alpha=2)
     print(f"New path calculated: {path}")  # 打印新路径

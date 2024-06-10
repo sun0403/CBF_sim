@@ -13,7 +13,7 @@ rho_01 = 1.0
 rho_02 = 0.5
 rho_03 = 0.25
 rho_04 = 0.1
-def generate_random_obstacles(num_obstacles, field_size=5):
+def generate_random_obstacles(num_obstacles, field_size=3):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -23,7 +23,7 @@ def generate_random_obstacles(num_obstacles, field_size=5):
                 obstacles.append(new_obstacle)
                 break
     return obstacles
-num=5
+num=3
 obstacles =generate_random_obstacles(num)
 '''[
     {'position': np.array([1.0, 2.0]), 'radius': 0.5},
@@ -45,7 +45,7 @@ def grad_U_pot(x,x_goal,obs,rho_0):
             grad_U_obs += 0
     return -grad_U_attr - grad_U_obs
 #定义寻路函数
-def find_path(x0, x_goal,rho_0,obs,alpha=0.001, max_iter=10000, tol=1e-1):
+def find_path(x0, x_goal,rho_0,obs,alpha=0.001, max_iter=10000, tol=1e-3):
     x = x0
     path = [x]
     times = [0]
@@ -71,7 +71,7 @@ plt.figure(figsize=(10, 8))
 plt.plot(x0[0], x0[1], 'ro', label='start')
 plt.plot(x_goal[0], x_goal[1], 'go', label='end')
 for obs in obstacles:
-    circle = plt.Circle(obs['position'], obs['radius'], color='r', alpha=0.5, label='obstacles')
+    circle = plt.Circle(obs['position'], obs['radius'], color='r', alpha=0.1, label='obstacles')
     plt.gca().add_artist(circle)
 plt.plot(path_1[:, 0], path_1[:, 1], 'b-', label='rho0_1=1')
 plt.plot(path_2[:, 0], path_2[:, 1], 'r-', label='rho0_2=0.5')

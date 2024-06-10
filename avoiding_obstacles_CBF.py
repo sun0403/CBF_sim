@@ -2,41 +2,13 @@ import pygame
 import time
 import sys
 import numpy as np
-
+import CBF
 # 初始化APF算法相关的常量
 K_attr = 1.0
 K_rep = 1.0
 rho0 = 0.1
 
-def rho(x, obs):
-    return np.linalg.norm(x - obs['position']) - obs['radius']
 
-# 定义梯度函数
-def grad_U_pot(x, x_goal, obs, rho_0):
-    grad_U_attr = K_attr * (x_goal - x)
-    grad_U_obs = np.zeros_like(x, dtype=float)
-    for ob in obs:
-        rho_x = rho(x, ob)
-        if rho_x <= rho_0:
-            grad_U_obs += K_rep * (1 / rho_x - 1 / rho_0) * (-1 / rho_x ** 2) * (x - ob['position']) / np.linalg.norm(x - ob['position'])
-        else:
-            grad_U_obs += 0
-    return grad_U_attr + grad_U_obs
-
-def find_path(x0, x_goal, rho_0, obs, alpha=0.001, max_iter=10000, tol=1e-1):
-    x = x0
-    path = [x]
-    times = [0]
-    start_time = time.time()
-    for _ in range(max_iter):
-        F = grad_U_pot(x, x_goal, obs, rho_0)
-        x = x + alpha * F
-        times.append(time.time() - start_time)
-        path.append(x)
-        if np.linalg.norm(x - x_goal) < tol:
-            break
-    final_time = time.time() - start_time
-    return np.array(path), final_time, times
 
 # 初始化pygame
 pygame.init()
@@ -120,9 +92,9 @@ while running:
 
     # 使用APF算法计算路径
     if check_collision(desired_goal, 5, obstacles):
-        path, _, _ = find_path(particle_pos, desired_goal, rho_0=0.5, obs=obstacles)
+        path, _, _ = CBF.find_path_qp(particle_pos,desired_goal,obstacles,alpha=2)
         if len(path) > 1:
-            particle_pos = np.array(path[2])  # 移动到路径的下一个位置
+            particle_pos = np.array(path[1])  # 移动到路径的下一个位置
     else:
         particle_pos = desired_goal  # 没有碰撞时按期望目标位置移动
 

@@ -76,7 +76,7 @@ def find_path_qp(x0, x_goal, obstacles, alpha, beta=0.01, max_iter=100000, tol=1
 
 
 #路径规划计算 calculate path
-path_1 ,_,_= find_path_qp(x0, x_goal, obstacles, alpha_1)
+'''path_1 ,_,_= find_path_qp(x0, x_goal, obstacles, alpha_1)
 path_2,_,_ = find_path_qp(x0, x_goal, obstacles, alpha_2)
 path_3 ,_,_= find_path_qp(x0, x_goal, obstacles, alpha_3)
 path_4 ,_,_= find_path_qp(x0, x_goal, obstacles, alpha_4)
@@ -96,6 +96,6 @@ plt.title('path')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.legend(loc='upper right')
-plt.show()
+plt.show()'''
 
 
