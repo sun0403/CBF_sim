@@ -100,16 +100,16 @@ K_rep=1
 rho_01=0.5
 rho_02=0.1
 delta=0.001
-num_obstacles=3
+num_obstacles=5
 
-obstacles = [
+'''obstacles = [
     {'position': np.array([1.0, 2.0]), 'radius': 0.5},
-    {'position': np.array([2.5, 3.0]), 'radius': 0.5}]
-#obstacles=generate_random_obstacles(num_obstacles)
+    {'position': np.array([2.5, 3.0]), 'radius': 0.5}]'''
+obstacles=generate_random_obstacles(num_obstacles)
 path_rho_01,_,_ = find_path_v_star(x0, x_goal, obstacles,rho_01, alpha, delta)
 path_rho_02,_,_ = find_path_v_star(x0, x_goal, obstacles,rho_02,alpha, delta)
-path_1,_,_=APF.find_path(x0,x_goal,rho_01,obstacles)
-path_4,_,_=APF.find_path(x0,x_goal,rho_02,obstacles)
+##path_1,_,_=APF.find_path(x0,x_goal,rho_01,obstacles)
+##path_4,_,_=APF.find_path(x0,x_goal,rho_02,obstacles)
 
 
 plt.figure(figsize=(10, 8))
@@ -120,8 +120,8 @@ for obs in obstacles:
     plt.gca().add_artist(circle)
 plt.plot(path_rho_01[:, 0], path_rho_01[:, 1], 'b-', label='CBF-APF rho0=1')
 plt.plot(path_rho_02[:, 0], path_rho_02[:, 1], 'r-', label='CBF-APF rho0=0.1')
-plt.plot(path_1[:, 0], path_1[:, 1], 'y-', label='APF rho0=1')
-plt.plot(path_4[:, 0], path_4[:, 1], 'k-', label='APF rho0=0.1')
+##plt.plot(path_1[:, 0], path_1[:, 1], 'y-', label='APF rho0=1')
+##plt.plot(path_4[:, 0], path_4[:, 1], 'k-', label='APF rho0=0.1')
 plt.title('Path Planning with CBF based APF')
 plt.xlabel('X')
 plt.ylabel('Y')

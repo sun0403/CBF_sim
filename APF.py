@@ -13,10 +13,22 @@ rho_01 = 1.0
 rho_02 = 0.5
 rho_03 = 0.25
 rho_04 = 0.1
-obstacles = [
+def generate_random_obstacles(num_obstacles, field_size=5):
+    obstacles = []
+    for _ in range(num_obstacles):
+        while True:
+            position = np.random.rand(2) * field_size
+            new_obstacle = {'position': position, 'radius': 0.5}
+            if all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in obstacles):
+                obstacles.append(new_obstacle)
+                break
+    return obstacles
+num=5
+obstacles =generate_random_obstacles(num)
+'''[
     {'position': np.array([1.0, 2.0]), 'radius': 0.5},
 {'position': np.array([2.5, 3.0]), 'radius': 0.5}
-]
+]'''
 #定义rho0
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
@@ -33,7 +45,7 @@ def grad_U_pot(x,x_goal,obs,rho_0):
             grad_U_obs += 0
     return -grad_U_attr - grad_U_obs
 #定义寻路函数
-def find_path(x0, x_goal,rho_0,obs,alpha=0.001, max_iter=10000, tol=1e-2):
+def find_path(x0, x_goal,rho_0,obs,alpha=0.001, max_iter=10000, tol=1e-1):
     x = x0
     path = [x]
     times = [0]
