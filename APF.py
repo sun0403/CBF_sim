@@ -13,18 +13,20 @@ rho_01 = 1.0
 rho_02 = 0.5
 rho_03 = 0.25
 rho_04 = 0.1
-def generate_random_obstacles(num_obstacles, field_size=3):
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=3):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
             position = np.random.rand(2) * field_size
             new_obstacle = {'position': position, 'radius': 0.5}
-            if all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in obstacles):
+            if (np.linalg.norm(position - start_pos) > new_obstacle['radius'] and
+                np.linalg.norm(position - goal_pos) > new_obstacle['radius'] and
+                all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in obstacles)):
                 obstacles.append(new_obstacle)
                 break
     return obstacles
 num=3
-obstacles =generate_random_obstacles(num)
+obstacles =generate_random_obstacles(num,x0,x_goal)
 '''[
     {'position': np.array([1.0, 2.0]), 'radius': 0.5},
 {'position': np.array([2.5, 3.0]), 'radius': 0.5}
