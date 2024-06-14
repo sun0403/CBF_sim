@@ -18,10 +18,10 @@ def grad_U_pot(x, x_goal, obs, rho_0):
     for ob in obs:
         rho_x = rho(x, ob)
         if rho_x <= rho_0:
-            grad_U_obs += K_rep * (1 / rho_x - 1 / rho_0) * (-1 / rho_x ** 2) * (x - ob['position']) / np.linalg.norm(x - ob['position'])
+            grad_U_obs += K_rep * (1 / rho_x - 1 / rho_0) * (-1 / rho_x ** 2) * (x - ob['position']) / (np.linalg.norm(x - ob['position']) + 1e-6)
     return grad_U_attr + grad_U_obs
 
-def find_path(x0, x_goal, rho_0, obs, alpha, max_iter=10000, tol=1e-3):
+def find_path(x0, x_goal, rho_0, obs, alpha, max_iter=1, tol=1e-3):
     x = x0  # 使用copy避免改变输入参数
     path = [x]
     for _ in range(max_iter):
