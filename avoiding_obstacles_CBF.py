@@ -5,7 +5,7 @@ import sys
 K_att = 1.0
 K_rep = 1.0
 delta = 0.001
-rho_0 = 0.25
+
 
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
