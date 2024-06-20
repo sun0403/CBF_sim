@@ -1,9 +1,8 @@
 import pygame
 import numpy as np
 import sys
-
-K_att = 1.0
-K_rep = 1.0
+K_att = 9.99
+K_rep = 9.99
 delta = 0.001
 
 
@@ -60,7 +59,7 @@ def v_star(x, x_goal, obstacles, alpha, delta, rho_0):
 
 pygame.init()
 
-screen_width, screen_height = 500, 500
+screen_width, screen_height = 1000, 1000
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Particle Control Simulation")
 
@@ -70,12 +69,9 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-delta_t = 0.1
-delta_t2 = 0.01
-particle_speed = 10
-alpha = 1
 
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
+
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=1000):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -92,19 +88,19 @@ start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
 target_goal = np.array([450.0, 450.0])
 particle_pos = np.array([50.0, 50.0])
-num_obstacles = 5
+num_obstacles = 10
+limlit=50
 obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
+delta_t = 0.05
+particle_speed = 100
+alpha = 1
 
-def check_collision(particle_pos, particle_radius, obstacles):
-    for obstacle in obstacles:
-        distance = np.linalg.norm(particle_pos - obstacle['position'])
-        if distance < particle_radius + obstacle['radius']:
-            return True
-    return False
+
+
 
 velocity = np.array([0.0, 0.0])
 running = True
-
+user_goal = np.array([0.0,0.0])
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -114,40 +110,48 @@ while running:
                 running = False
 
     keys = pygame.key.get_pressed()
+    left_pressed = False
+    if keys[pygame.K_LEFT]:
+        left_pressed = True
+        velocity[0] -= particle_speed * delta_t
 
-    '''if keys[pygame.K_LEFT]:
-        target_goal[0] -= 10
+    right_pressed = False
     if keys[pygame.K_RIGHT]:
-        target_goal[0] += 10
+        right_pressed = True
+        velocity[0] += particle_speed * delta_t
+
+    up_pressed = False
     if keys[pygame.K_UP]:
-        target_goal[1] -= 10
+        up_pressed = True
+        velocity[1] -= particle_speed * delta_t
+
+    down_pressed = False
     if keys[pygame.K_DOWN]:
-        target_goal[1] += 10'''
+        down_pressed = True
+        velocity[1] += particle_speed * delta_t
 
-    target_goal[0] = np.clip(target_goal[0], 0, screen_width)
-    target_goal[1] = np.clip(target_goal[1], 0, screen_height)
+    if velocity[0] > limlit:
+        velocity[0] = limlit
+    if velocity[0] < -limlit:
+        velocity[0] = -limlit
+    if velocity[1] > limlit:
+        velocity[1] = limlit
+    if velocity[1] < -limlit:
+        velocity[1] = -limlit
 
+    # Check if any key is pressed
+    any_key_pressed = left_pressed or right_pressed or up_pressed or down_pressed
 
-    if not check_collision(particle_pos, 5, obstacles):
-        if keys[pygame.K_LEFT]:
-            velocity[0] -= particle_speed * delta_t
-
-        if keys[pygame.K_RIGHT]:
-            velocity[0] += particle_speed * delta_t
-
-        if keys[pygame.K_UP]:
-            velocity[1] -= particle_speed * delta_t
-
-        if keys[pygame.K_DOWN]:
-            velocity[1] += particle_speed * delta_t
-
-        particle_pos += velocity * delta_t
-    else:
-        v = v_star(particle_pos, target_goal, obstacles, alpha=0.1, delta=0.001, rho_0=5)
-        particle_pos += v * 0.01
+    # If no key is pressed, set velocity to zero
+    if not any_key_pressed:
+        velocity *= 0.0
 
 
-
+    print(f'Desired user velocity: {velocity}')
+    user_goal = particle_pos + velocity * delta_t
+    v = v_star(particle_pos, user_goal, obstacles, alpha=1, delta=0.001, rho_0=5)
+    particle_pos += v*0.1
+    print(f'Actual velocity from v_star: {v}')
 
     particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
     particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)

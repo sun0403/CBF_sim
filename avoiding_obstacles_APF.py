@@ -4,22 +4,22 @@ import time
 import sys
 
 # 初始化APF算法常量
-K_attr = 2.0
-K_rep = 2.0
-rho0 = 2.5
+K_attr = 5.0
+K_rep = 15.0
+rho0 = 2.0
 
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
 
 # 定义梯度函数
 def grad_U_pot(x, x_goal, obs, rho_0):
-    grad_U_attr = K_attr * (x_goal - x)
+    grad_U_attr = K_attr * (x - x_goal)
     grad_U_obs = np.zeros_like(x, dtype=float)
     for ob in obs:
         rho_x = rho(x, ob)
         if rho_x <= rho_0:
             grad_U_obs += K_rep * (1 / rho_x - 1 / rho_0) * (-1 / rho_x ** 2) * (x - ob['position']) / (np.linalg.norm(x - ob['position']) + 1e-6)
-    return -grad_U_attr - grad_U_obs
+    return -(grad_U_attr + grad_U_obs)
 
 pygame.init()
 
@@ -34,10 +34,6 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
-
-# 粒子属性
-delta_t = 0.1
-particle_speed =  30 # 调整速度
 
 
 
@@ -59,20 +55,15 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500
 # 起始和目标位置
 start_pos = np.array([50.0, 50.0])
 target_goal=np.array([450.0, 450.0])
-particle_pos = np.array([50.0, 50.0])
+particle_pos = np.array([0.0, 0.0])
 velocity = np.array([0.0, 0.0])
-num_obstacles = 10
+num_obstacles = 5
 obstacles =generate_random_obstacles(num_obstacles,start_pos,target_goal)
-
-# 碰撞检测函数
-def check_collision(particle_pos, particle_radius, obstacles):
-    for obstacle in obstacles:
-        distance = np.linalg.norm(np.array(particle_pos) - np.array(obstacle['position']))
-        if distance < particle_radius + obstacle['radius']:
-            return True
-    return False
-# 主循环
+limlit=100
+delta_t = 0.1
+particle_speed = 200
 running = True
+user_goal = np.array([0.0,0.0])
 
 while running:
     for event in pygame.event.get():
@@ -83,24 +74,50 @@ while running:
                 running = False
 
     keys = pygame.key.get_pressed()
-    if not check_collision(particle_pos, 5, obstacles):
-        if keys[pygame.K_LEFT]:
-            velocity[0] -= particle_speed * delta_t
-        if keys[pygame.K_RIGHT]:
-            velocity[0] += particle_speed * delta_t
-        if keys[pygame.K_UP]:
-            velocity[1] -= particle_speed * delta_t
-        if keys[pygame.K_DOWN]:
-            velocity[1] += particle_speed * delta_t
-        particle_pos+=velocity*delta_t
-        velocity1=velocity
+    left_pressed = False
+    if keys[pygame.K_LEFT]:
+        left_pressed = True
+        velocity[0] -= particle_speed * delta_t
 
-    else:
-        velocity = np.array([0.0, 0.0])
-        F = grad_U_pot(particle_pos, target_goal,obstacles, rho0)
-        print(F)
-        particle_pos+=F*0.001
-        velocity = np.array([0.0, 0.0])
+    right_pressed = False
+    if keys[pygame.K_RIGHT]:
+        right_pressed = True
+        velocity[0] += particle_speed * delta_t
+
+    up_pressed = False
+    if keys[pygame.K_UP]:
+        up_pressed = True
+        velocity[1] -= particle_speed * delta_t
+
+    down_pressed = False
+    if keys[pygame.K_DOWN]:
+        down_pressed = True
+        velocity[1] += particle_speed * delta_t
+
+
+    if velocity[0] > limlit:
+        velocity[0] = limlit
+    if velocity[0] < -limlit:
+        velocity[0] = -limlit
+    if velocity[1] > limlit:
+        velocity[1] = limlit
+    if velocity[1] < -limlit:
+        velocity[1] = -limlit
+
+    any_key_pressed = left_pressed or right_pressed or up_pressed or down_pressed
+
+    # If no key is pressed, set velocity to zero
+    if not any_key_pressed:
+        velocity *= 0.0
+    user_goal=particle_pos+delta_t*velocity
+    print(f'Desired user velocity: {velocity}')
+
+    F = grad_U_pot(particle_pos, user_goal, obstacles, rho0)
+    print(f'Actual velocity from F: {F}')
+
+    # Update particle position
+    particle_pos += F * 0.02
+
 
 
 
