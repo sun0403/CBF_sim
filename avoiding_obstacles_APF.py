@@ -5,7 +5,7 @@ import sys
 
 # 初始化APF算法常量
 K_attr = 5.0
-K_rep = 15.0
+K_rep = 20.0
 rho0 = 2.0
 
 def rho(x, obs):
@@ -59,7 +59,7 @@ particle_pos = np.array([0.0, 0.0])
 velocity = np.array([0.0, 0.0])
 num_obstacles = 5
 obstacles =generate_random_obstacles(num_obstacles,start_pos,target_goal)
-limlit=100
+limlit=50
 delta_t = 0.1
 particle_speed = 200
 running = True
