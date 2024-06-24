@@ -1,6 +1,9 @@
 import pygame
 import numpy as np
 import sys
+import time
+import pandas as pd
+
 K_att = 9.99
 K_rep = 9.99
 delta = 0.001
@@ -88,12 +91,23 @@ start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
 target_goal = np.array([450.0, 450.0])
 particle_pos = np.array([50.0, 50.0])
-num_obstacles = 10
+num_obstacles = 30
 limlit=50
 obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
 delta_t = 0.05
 particle_speed = 100
 alpha = 1
+
+data = {
+    "timestamp": [],
+    "particle_position": [],
+    "user_goal": [],
+    "velocity": [],
+    "collision": [],
+    "key_pressed": []
+}
+
+start_time = time.time()
 
 
 
@@ -111,23 +125,28 @@ while running:
 
     keys = pygame.key.get_pressed()
     left_pressed = False
+    key_pressed = None
     if keys[pygame.K_LEFT]:
         left_pressed = True
+        key_pressed = "LEFT"
         velocity[0] -= particle_speed * delta_t
 
     right_pressed = False
     if keys[pygame.K_RIGHT]:
         right_pressed = True
+        key_pressed = "RIGHT"
         velocity[0] += particle_speed * delta_t
 
     up_pressed = False
     if keys[pygame.K_UP]:
         up_pressed = True
+        key_pressed = "UP"
         velocity[1] -= particle_speed * delta_t
 
     down_pressed = False
     if keys[pygame.K_DOWN]:
         down_pressed = True
+        key_pressed = "DOWN"
         velocity[1] += particle_speed * delta_t
 
     if velocity[0] > limlit:
@@ -147,11 +166,30 @@ while running:
         velocity *= 0.0
 
 
-    print(f'Desired user velocity: {velocity}')
+
     user_goal = particle_pos + velocity * delta_t
     v = v_star(particle_pos, user_goal, obstacles, alpha=1, delta=0.001, rho_0=5)
     particle_pos += v*0.1
-    print(f'Actual velocity from v_star: {v}')
+
+
+    timestamp = time.time() - start_time
+    collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
+
+    data["timestamp"].append(timestamp)
+    data["particle_position"].append(particle_pos.tolist())
+    data["user_goal"].append(user_goal.tolist())
+    data["velocity"].append(velocity.tolist())
+    data["collision"].append(collision)
+    data["key_pressed"].append(key_pressed)
+
+    print(f'Desired user goal: {user_goal}')
+    print(f'Actual particle position: {particle_pos}')
+    print(f'Desired user velocity: {velocity}')
+    print(f'Actual velocity from v: {v}')
+
+    if np.linalg.norm(particle_pos - target_goal) < 5:
+        print("Particle reached goal")
+        break
 
     particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
     particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
@@ -170,4 +208,8 @@ while running:
     pygame.time.delay(100)
 
 pygame.quit()
+
+df=pd.DataFrame(data)
+df.to_csv("CBF+APF.csv", index=False)
+print("Data saved to CBF+APF.csv")
 sys.exit()
