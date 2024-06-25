@@ -7,6 +7,7 @@ import pandas as pd
 K_att = 9.99
 K_rep = 9.99
 delta = 0.001
+rho_0=20
 
 
 def rho(x, obs):
@@ -89,14 +90,21 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=100
 
 start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
-target_goal = np.array([450.0, 450.0])
+target_goal = np.array([950.0, 950.0])
 particle_pos = np.array([50.0, 50.0])
 num_obstacles = 30
-limlit=50
+limlit=100
 obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
+boundary_thickness =2
+boundaries = [
+    {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
+]
 delta_t = 0.05
 particle_speed = 100
-alpha = 1
+alpha = 0.5
 
 data = {
     "timestamp": [],
@@ -168,7 +176,7 @@ while running:
 
 
     user_goal = particle_pos + velocity * delta_t
-    v = v_star(particle_pos, user_goal, obstacles, alpha=1, delta=0.001, rho_0=5)
+    v = v_star(particle_pos, user_goal, obstacles, alpha, delta=0.001, rho_0=rho_0)
     particle_pos += v*0.1
 
 
@@ -210,6 +218,6 @@ while running:
 pygame.quit()
 
 df=pd.DataFrame(data)
-df.to_csv("CBF+APF.csv", index=False)
+df.to_csv("CBF+APF1.csv", index=False)
 print("Data saved to CBF+APF.csv")
 sys.exit()

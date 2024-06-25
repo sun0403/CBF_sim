@@ -51,7 +51,6 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=100
     return obstacles
 
 
-
 # 起始和目标位置
 start_pos = np.array([50.0, 50.0])
 target_goal=np.array([450.0, 450.0])
@@ -59,12 +58,22 @@ particle_pos = np.array([0.0, 0.0])
 velocity = np.array([0.0, 0.0])
 num_obstacles = 30
 obstacles =generate_random_obstacles(num_obstacles,start_pos,target_goal)
+# Add boundaries as obstacles
+boundary_thickness =2
+boundaries = [
+    {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
+]
+
+# Add boundaries to the list of obstacles
+obstacles.extend(boundaries)
 limlit=50
 delta_t = 0.1
 particle_speed = 100
 running = True
 user_goal = np.array([0.0,0.0])
-
 data = {
     "timestamp": [],
     "particle_position": [],
@@ -163,6 +172,6 @@ while running:
 pygame.quit()
 
 cf=pd.DataFrame(data)
-cf.to_csv("APF.csv",index=False)
+cf.to_csv("APF2.csv",index=False)
 print("Data saved to APF.csv")
 sys.exit()
