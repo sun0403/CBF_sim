@@ -177,7 +177,7 @@ while running:
 
     user_goal = particle_pos + velocity * delta_t
     v = v_star(particle_pos, user_goal, obstacles, alpha, delta=0.001, rho_0=rho_0)
-    particle_pos += v*0.1
+    particle_pos += v*0.02
 
 
     timestamp = time.time() - start_time
@@ -219,5 +219,5 @@ pygame.quit()
 
 df=pd.DataFrame(data)
 df.to_csv("CBF+APF1.csv", index=False)
-print("Data saved to CBF+APF.csv")
+print("Data saved to CBF+APF3.csv")
 sys.exit()

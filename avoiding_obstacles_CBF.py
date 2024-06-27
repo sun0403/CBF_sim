@@ -42,7 +42,7 @@ def qp_solver(x, x_goal, obstacles, alpha, d_obs):
 
 pygame.init()
 
-(screen_width, screen_height) = 1000, 1000
+(screen_width, screen_height) = 500, 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Particle Control Simulation")
 
@@ -52,7 +52,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=1000):
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -67,12 +67,12 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=100
 
 start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
-target_goal = np.array([550.0, 150.0])
+target_goal = np.array([450.0, 450.0])
 particle_pos = np.array([50.0, 50.0])
-num_obstacles = 30
-limlit = 50
+num_obstacles = 10
+limlit = 100
 obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
-boundary_thickness =2
+boundary_thickness =10
 boundaries = [
     {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
     {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]), 'radius': boundary_thickness},
@@ -149,7 +149,7 @@ while running:
 
     user_goal = particle_pos + velocity * delta_t
     v = qp_solver(particle_pos, user_goal, obstacles, alpha, d_obs)
-    particle_pos += v * 0.1
+    particle_pos += v * 0.05
     timestamp = time.time() - start_time
     collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
 
@@ -190,7 +190,7 @@ while running:
 pygame.quit()
 
 df = pd.DataFrame(data)
-df.to_csv("CBF3.csv", index=False)
+df.to_csv("CBF2.csv", index=False)
 print("Data saved to CBF.csv")
 
 

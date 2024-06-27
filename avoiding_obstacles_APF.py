@@ -4,9 +4,9 @@ import numpy as np
 import time
 import sys
 
-K_attr = 5.0
-K_rep = 20.0
-rho0 = 2.0
+K_attr = 2.0
+K_rep = 6.0
+rho0 = 4.0
 
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
@@ -24,7 +24,7 @@ def grad_U_pot(x, x_goal, obs, rho_0):
 pygame.init()
 
 # 屏幕大小
-screen_width, screen_height = 1000, 1000
+screen_width, screen_height = 500, 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("粒子控制模拟")
 
@@ -37,7 +37,7 @@ BLUE = (0, 0, 255)
 
 
 
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=1000):
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -54,9 +54,9 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=100
 # 起始和目标位置
 start_pos = np.array([50.0, 50.0])
 target_goal=np.array([450.0, 450.0])
-particle_pos = np.array([0.0, 0.0])
+particle_pos = np.array([50.0, 50.0])
 velocity = np.array([0.0, 0.0])
-num_obstacles = 30
+num_obstacles = 10
 obstacles =generate_random_obstacles(num_obstacles,start_pos,target_goal)
 # Add boundaries as obstacles
 boundary_thickness =2
@@ -69,7 +69,7 @@ boundaries = [
 
 # Add boundaries to the list of obstacles
 obstacles.extend(boundaries)
-limlit=50
+limlit=100
 delta_t = 0.1
 particle_speed = 100
 running = True
@@ -135,7 +135,7 @@ while running:
     #update the postion
     user_goal=particle_pos+delta_t*velocity
     F = grad_U_pot(particle_pos, user_goal, obstacles, rho0)
-    particle_pos += F * 0.02
+    particle_pos += F * 0.05
 
     if np.linalg.norm(particle_pos-target_goal)<5:
         break
@@ -172,6 +172,6 @@ while running:
 pygame.quit()
 
 cf=pd.DataFrame(data)
-cf.to_csv("APF2.csv",index=False)
+cf.to_csv("APF10.csv",index=False)
 print("Data saved to APF.csv")
 sys.exit()
