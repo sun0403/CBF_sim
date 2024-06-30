@@ -190,7 +190,7 @@ while running:
 pygame.quit()
 
 df = pd.DataFrame(data)
-df.to_csv("CBF2.csv", index=False)
+df.to_csv("CBF10.csv", index=False)
 print("Data saved to CBF.csv")
 
 
