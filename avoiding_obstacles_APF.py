@@ -4,9 +4,9 @@ import numpy as np
 import time
 import sys
 
-K_attr = 2.0
-K_rep = 6.0
-rho0 = 4.0
+K_attr = 20.0
+K_rep = 60.0
+rho0 = 100.0
 
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
@@ -70,8 +70,8 @@ boundaries = [
 # Add boundaries to the list of obstacles
 obstacles.extend(boundaries)
 limlit=100
-delta_t = 0.1
-particle_speed = 100
+delta_t = 0.01
+particle_speed = 1000
 running = True
 user_goal = np.array([0.0,0.0])
 data = {
@@ -136,6 +136,11 @@ while running:
     user_goal=particle_pos+delta_t*velocity
     F = grad_U_pot(particle_pos, user_goal, obstacles, rho0)
     particle_pos += F * 0.05
+
+    print(f'Desired user goal: {user_goal}')
+    print(f'Actual particle position: {particle_pos}')
+    print(f'Desired user velocity: {velocity}')
+    print(f'Actual velocity from F: {F}')
 
     if np.linalg.norm(particle_pos-target_goal)<5:
         break

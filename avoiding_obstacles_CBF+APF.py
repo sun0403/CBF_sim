@@ -4,8 +4,8 @@ import sys
 import time
 import pandas as pd
 
-K_att = 9.99
-K_rep = 9.99
+K_att = 20.0
+K_rep = 20.0
 delta = 0.001
 rho_0=20
 
@@ -63,7 +63,7 @@ def v_star(x, x_goal, obstacles, alpha, delta, rho_0):
 
 pygame.init()
 
-screen_width, screen_height = 1000, 1000
+screen_width, screen_height = 500, 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Particle Control Simulation")
 
@@ -75,7 +75,7 @@ BLUE = (0, 0, 255)
 
 
 
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=1000):
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -90,9 +90,9 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=100
 
 start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
-target_goal = np.array([950.0, 950.0])
+target_goal = np.array([450.0, 450.0])
 particle_pos = np.array([50.0, 50.0])
-num_obstacles = 30
+num_obstacles = 10
 limlit=100
 obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
 boundary_thickness =2
@@ -177,7 +177,7 @@ while running:
 
     user_goal = particle_pos + velocity * delta_t
     v = v_star(particle_pos, user_goal, obstacles, alpha, delta=0.001, rho_0=rho_0)
-    particle_pos += v*0.02
+    particle_pos += v*0.05
 
 
     timestamp = time.time() - start_time
@@ -218,6 +218,6 @@ while running:
 pygame.quit()
 
 df=pd.DataFrame(data)
-df.to_csv("CBF+APF1.csv", index=False)
+df.to_csv("CBF+APF9.csv", index=False)
 print("Data saved to CBF+APF3.csv")
 sys.exit()
