@@ -19,8 +19,11 @@ def compute_task_completion_times(data):
     return task_times
 
 def compute_human_fatigue(data):
-    key_presses = data['key_pressed'].notna().sum()
-    return key_presses
+    if 'key_pressed' in data.columns:
+        key_presses = data['key_pressed'].notna().sum()
+        return key_presses
+    else:
+        return None
 
 def compute_smoothness(data):
     positions = data['particle_position'].apply(lambda x: np.array(eval(x)))
@@ -41,12 +44,16 @@ def compute_metrics(file_path):
     smoothness = compute_smoothness(data)
     collisions = compute_collisions(data)
 
-    return {
+    metrics = {
         'task_completion_time': task_completion_time,
-        'human_fatigue': human_fatigue,
         'smoothness': smoothness,
         'collisions': collisions
     }
+
+    if human_fatigue is not None:
+        metrics['human_fatigue'] = human_fatigue
+
+    return metrics
 
 def main():
     if len(sys.argv) != 2:

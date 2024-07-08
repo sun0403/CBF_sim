@@ -5,6 +5,8 @@ import sys
 import cvxpy as cp
 import pandas as pd
 
+
+np.random.seed(10)
 K = 100.0
 d_obs = 50.0
 
@@ -190,7 +192,7 @@ while running:
 pygame.quit()
 
 df = pd.DataFrame(data)
-df.to_csv("CBF10.csv", index=False)
+df.to_csv("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_csv/CBF10.csv", index=False)
 print("Data saved to CBF.csv")
 
 

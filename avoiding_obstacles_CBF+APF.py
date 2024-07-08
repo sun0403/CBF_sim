@@ -4,12 +4,12 @@ import sys
 import time
 import pandas as pd
 
-K_att = 20.0
-K_rep = 20.0
+K_att = 100.0
+K_rep = 100.0
 delta = 0.001
 rho_0=20
 
-
+np.random.seed(10)
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
 
@@ -102,8 +102,8 @@ boundaries = [
     {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
     {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
 ]
-delta_t = 0.05
-particle_speed = 100
+delta_t = 0.01
+particle_speed = 200
 alpha = 0.5
 
 data = {
@@ -218,6 +218,6 @@ while running:
 pygame.quit()
 
 df=pd.DataFrame(data)
-df.to_csv("CBF+APF9.csv", index=False)
+df.to_csv("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF+APF_csv/CBF+APF10.csv", index=False)
 print("Data saved to CBF+APF3.csv")
 sys.exit()

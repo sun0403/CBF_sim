@@ -4,8 +4,9 @@ import numpy as np
 import time
 import sys
 
+np.random.seed(10)
 K_attr = 20.0
-K_rep = 60.0
+K_rep = 20.0
 rho0 = 100.0
 
 def rho(x, obs):
@@ -18,6 +19,7 @@ def grad_U_pot(x, x_goal, obs, rho_0):
     for ob in obs:
         rho_x = rho(x, ob)
         if rho_x <= rho_0:
+            rho_x = np.maximum(1e-2, rho_x)
             grad_U_obs += K_rep * (1 / rho_x - 1 / rho_0) * (-1 / rho_x ** 2) * (x - ob['position']) / (np.linalg.norm(x - ob['position']) + 1e-6)
     return -(grad_U_attr + grad_U_obs)
 
@@ -70,8 +72,8 @@ boundaries = [
 # Add boundaries to the list of obstacles
 obstacles.extend(boundaries)
 limlit=100
-delta_t = 0.01
-particle_speed = 1000
+delta_t = 0.05
+particle_speed = 100
 running = True
 user_goal = np.array([0.0,0.0])
 data = {
@@ -135,7 +137,8 @@ while running:
     #update the postion
     user_goal=particle_pos+delta_t*velocity
     F = grad_U_pot(particle_pos, user_goal, obstacles, rho0)
-    particle_pos += F * 0.05
+    F = np.clip(F, -100, 100)
+    particle_pos += F * delta_t
 
     print(f'Desired user goal: {user_goal}')
     print(f'Actual particle position: {particle_pos}')
@@ -177,6 +180,6 @@ while running:
 pygame.quit()
 
 cf=pd.DataFrame(data)
-cf.to_csv("APF10.csv",index=False)
+cf.to_csv("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_csv/APF10.csv",index=False)
 print("Data saved to APF.csv")
 sys.exit()
