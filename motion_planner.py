@@ -99,6 +99,9 @@ class MotionPlanner:
                     return False
             return self.is_free(point2, obstacles)
 
+        import time
+        t1 = time.time()
+
         start = np.array(start)
         goal = np.array(goal)
         nodes = [start]
@@ -119,6 +122,8 @@ class MotionPlanner:
                     nodes.append(goal)
                     parents[len(nodes) - 1] = len(nodes) - 2
                     break
+
+        print(f"Time needed: {time.time() - t1}")
 
         path = []
         current_index = len(nodes) - 1

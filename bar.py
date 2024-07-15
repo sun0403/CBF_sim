@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from Performance_Metrices import compute_metrics
 
-
 def plot_individual_metrics(stats_dict):
     # Collect all possible metrics across directories
     all_metrics = set()
@@ -17,7 +16,7 @@ def plot_individual_metrics(stats_dict):
     fig.suptitle('Performance Metrics', fontsize=16)
 
     bar_width = 0.15
-    x = np.arange(4)  # max, min, mean, std
+    x = np.arange(3)  # max, min, mean
 
     # Plot each metric separately
     for i, metric in enumerate(sorted(all_metrics)):
@@ -28,18 +27,19 @@ def plot_individual_metrics(stats_dict):
                 min_val = stats_dict[directory]['min'][metric]
                 mean_val = stats_dict[directory]['mean'][metric]
                 std_val = stats_dict[directory]['std'][metric]
-                values = [max_val, min_val, mean_val, std_val]
+                values = [max_val, min_val, mean_val]
                 ax.bar(x + j * bar_width, values, bar_width, label=directory)
+                # Add error bar to mean value
+                ax.errorbar(x[2] + j * bar_width, mean_val, yerr=std_val, fmt='o', color='black')
 
         ax.set_title(metric.capitalize())
         ax.set_ylabel('Values')
         ax.set_xticks(x + bar_width * (len(stats_dict) - 1) / 2)
-        ax.set_xticklabels(['Max', 'Min', 'Mean', 'Std'])
+        ax.set_xticklabels(['Max', 'Min', 'Mean'])
         ax.legend()
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
 
 # 指定数据目录路径列表
 directories = [
@@ -80,4 +80,10 @@ for directory_path in directories:
     else:
         print(f"No CSV files found in directory {directory_path}.")
 
-plot_individual_metrics(stats_dict)
+# 排除没有人类疲劳度数据的文件
+filtered_stats_dict = {
+    key: value for key, value in stats_dict.items()
+    if 'human_fatigue' not in value['mean'].index or key not in ['A_star_path', 'bfs_path', 'rrt_path']
+}
+
+plot_individual_metrics(filtered_stats_dict)

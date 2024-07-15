@@ -1,67 +1,205 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
+import time
+import pygame
+import numpy as np
 
-# 读取CSV文件，并跳过前两行（假设前两行是header和注释行）
-file_path = '/Users/yuanzhengsun/Downloads/-1500.csv'
-data = pd.read_csv(file_path, skiprows=2, header=None)
+from motion_planner import MotionPlanner  # Import the MotionPlanner class
 
-# 为列命名（根据实际情况命名列）
-data.columns = ['Col1', 'Col2', 'Col3', 'Col4', 'Col5']
+np.random.seed(3)
+pygame.init()
 
-# 清理数据：替换分号为小数点并正确处理数据格式
-def clean_data(value):
-    if isinstance(value, str):
-        value = value.replace(';', '.')
-        if '0.-' in value:
-            value = value.replace('0.-', '-')
-        value = value.replace('0.', '')
-    try:
-        return int(value)
-    except ValueError:
-        return value
+(screen_width, screen_height) = 500, 500
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Particle Control Simulation")
 
-data[['Col1', 'Col2','Col3']] = data[['Col1', 'Col2','Col3']].applymap(clean_data)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
 
-# 检查数据转换后是否正确
-print(data[['Col1', 'Col2','Col3']].head(10))
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
+    obstacles = []
+    for _ in range(num_obstacles):
+        while True:
+            position = np.random.rand(2) * field_size
+            new_obstacle = {'position': position, 'radius': 50}
+            if (np.linalg.norm(position - start_pos) > new_obstacle['radius'] and
+                    np.linalg.norm(position - goal_pos) > new_obstacle['radius'] and
+                    all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in
+                        obstacles)):
+                obstacles.append(new_obstacle)
+                break
+    return obstacles
 
-# 只选择前两列的前100个数据
-data = data[['Col1', 'Col2','Col3']].iloc[:8000]
+start_pos = np.array([50.0, 50.0])
+goal_pos = np.array([450.0, 450.0])
+particle_pos_a_star = np.array([50.0, 50.0])
+particle_pos_bfs = np.array([50.0, 50.0])
+particle_pos_rrt = np.array([50.0, 50.0])
+num_obstacles = 20
 
-# 创建一个宽幅图表并绘制两个子图
-fig, axs = plt.subplots(2, 1, figsize=(30, 12), sharex=True)
+obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
+boundary_thickness = 10
+boundaries = [
+    {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]), 'radius': boundary_thickness},
+    {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
+    {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
+]
 
-# 绘制第一列数据
-axs[0].plot(data['Col1'], label='Phase0', marker='o')
-axs[0].set_title('Phase 0')
-axs[0].set_ylabel('Value')
-axs[0].legend()
-axs[0].grid(True)
+delta_t = 0.01
+particle_speed = 200
+running = True
+
+data_a_star = {
+    "timestamp": [],
+    "particle_position": [],
+    "user_goal": [],
+    "velocity": [],
+    "collision": []
+}
+
+data_bfs = {
+    "timestamp": [],
+    "particle_position": [],
+    "user_goal": [],
+    "velocity": [],
+    "collision": []
+}
+
+data_rrt = {
+    "timestamp": [],
+    "particle_position": [],
+    "user_goal": [],
+    "velocity": [],
+    "collision": []
+}
+
+start_time = time.time()
+
+planner = MotionPlanner(grid_size=500, grid_step=10)
+path_a_star = planner.a_star(start_pos, goal_pos, obstacles)
+path_bfs = planner.bfs(start_pos, goal_pos, obstacles)
+path_rrt = planner.rrt(start_pos, goal_pos, obstacles)
+path_index_a_star = 0
+path_index_bfs = 0
+path_index_rrt = 0
+trajectory_a_star = []
+trajectory_bfs = []
+trajectory_rrt = []
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                running = False
+
+    # A* path following
+    if path_index_a_star < len(path_a_star):
+        a_star_goal = np.array(path_a_star[path_index_a_star])
+        direction_a_star = a_star_goal - particle_pos_a_star
+        distance_a_star = np.linalg.norm(direction_a_star)
+        if distance_a_star < 5:
+            path_index_a_star += 1
+        else:
+            direction_a_star = direction_a_star / distance_a_star * particle_speed * delta_t
+            particle_pos_a_star += direction_a_star
+        user_goal_a_star = a_star_goal
+    else:
+        user_goal_a_star = goal_pos
+
+    # BFS path following
+    if path_index_bfs < len(path_bfs):
+        bfs_goal = np.array(path_bfs[path_index_bfs])
+        direction_bfs = bfs_goal - particle_pos_bfs
+        distance_bfs = np.linalg.norm(direction_bfs)
+        if distance_bfs < 5:
+            path_index_bfs += 1
+        else:
+            direction_bfs = direction_bfs / distance_bfs * particle_speed * delta_t
+            particle_pos_bfs += direction_bfs
+        user_goal_bfs = bfs_goal
+    else:
+        user_goal_bfs = goal_pos
+
+    # RRT path following
+    if path_index_rrt < len(path_rrt):
+        rrt_goal = np.array(path_rrt[path_index_rrt])
+        direction_rrt = rrt_goal - particle_pos_rrt
+        distance_rrt = np.linalg.norm(direction_rrt)
+        if distance_rrt < 5:
+            path_index_rrt += 1
+        else:
+            direction_rrt = direction_rrt / distance_rrt * particle_speed * delta_t
+            particle_pos_rrt += direction_rrt
+        user_goal_rrt = rrt_goal
+    else:
+        user_goal_rrt = goal_pos
+
+    timestamp = time.time() - start_time
+    collision_a_star = any(np.linalg.norm(particle_pos_a_star - obs['position']) < obs['radius'] for obs in obstacles)
+    collision_bfs = any(np.linalg.norm(particle_pos_bfs - obs['position']) < obs['radius'] for obs in obstacles)
+    collision_rrt = any(np.linalg.norm(particle_pos_rrt - obs['position']) < obs['radius'] for obs in obstacles)
+
+    data_a_star["timestamp"].append(timestamp)
+    data_a_star["particle_position"].append(particle_pos_a_star.tolist())
+    data_a_star["user_goal"].append(user_goal_a_star.tolist())
+    data_a_star["velocity"].append(direction_a_star.tolist() if path_index_a_star < len(path_a_star) else [0, 0])
+    data_a_star["collision"].append(collision_a_star)
+
+    data_bfs["timestamp"].append(timestamp)
+    data_bfs["particle_position"].append(particle_pos_bfs.tolist())
+    data_bfs["user_goal"].append(user_goal_bfs.tolist())
+    data_bfs["velocity"].append(direction_bfs.tolist() if path_index_bfs < len(path_bfs) else [0, 0])
+    data_bfs["collision"].append(collision_bfs)
+
+    data_rrt["timestamp"].append(timestamp)
+    data_rrt["particle_position"].append(particle_pos_rrt.tolist())
+    data_rrt["user_goal"].append(user_goal_rrt.tolist())
+    data_rrt["velocity"].append(direction_rrt.tolist() if path_index_rrt < len(path_rrt) else [0, 0])
+    data_rrt["collision"].append(collision_rrt)
+
+    trajectory_a_star.append(particle_pos_a_star.copy())
+    trajectory_bfs.append(particle_pos_bfs.copy())
+    trajectory_rrt.append(particle_pos_rrt.copy())
 
 
-# 绘制第二列数据
-axs[1].plot(data['Col2'], label='Phase1', marker='o')
-axs[1].set_title('Phase 1')
-axs[1].set_xlabel('Index')
-axs[1].set_ylabel('Value')
-axs[1].legend()
-axs[1].grid(True)
 
+    if np.linalg.norm(particle_pos_a_star - goal_pos) < 5 and np.linalg.norm(particle_pos_bfs - goal_pos) < 5 and np.linalg.norm(particle_pos_rrt - goal_pos) < 5:
+        print("Particle reached goal")
+        running = False
 
+    particle_pos_a_star[0] = np.clip(particle_pos_a_star[0], 0, screen_width)
+    particle_pos_a_star[1] = np.clip(particle_pos_a_star[1], 0, screen_height)
+    particle_pos_bfs[0] = np.clip(particle_pos_bfs[0], 0, screen_width)
+    particle_pos_bfs[1] = np.clip(particle_pos_bfs[1], 0, screen_height)
+    particle_pos_rrt[0] = np.clip(particle_pos_rrt[0], 0, screen_width)
+    particle_pos_rrt[1] = np.clip(particle_pos_rrt[1], 0, screen_height)
 
+    screen.fill(WHITE)
 
-# 使用 MaxNLocator 限制 x 轴刻度的数量
-axs[1].xaxis.set_major_locator(MaxNLocator(nbins=10))
-axs[1].set_xticks(range(0, 8000, 100))  # 自定义 x 轴标签
+    pygame.draw.circle(screen, GREEN, start_pos.astype(int), 10)
+    pygame.draw.circle(screen, RED, goal_pos.astype(int), 10)
 
-# 设置整体标题
-plt.suptitle('-1500——0 rpm')
+    for obstacle in obstacles:
+        pygame.draw.circle(screen, BLACK, obstacle['position'].astype(int), int(obstacle['radius']))
 
-# 旋转 x 轴标签以提高可读性
-plt.xticks(rotation=45)
-output_file_path = '/Users/yuanzhengsun/Downloads/11.png'
-plt.savefig(output_file_path)
+    pygame.draw.circle(screen, BLUE, particle_pos_a_star.astype(int), 5)
+    pygame.draw.circle(screen, BLACK, particle_pos_bfs.astype(int), 5)
+    pygame.draw.circle(screen, RED, particle_pos_rrt.astype(int), 5)
 
-# 展示图表
-plt.show()
+    # Draw trajectories
+    for j in range(1, len(trajectory_a_star)):
+        pygame.draw.line(screen, BLUE, trajectory_a_star[j-1], trajectory_a_star[j], 2)
+    for j in range(1, len(trajectory_bfs)):
+        pygame.draw.line(screen, BLACK, trajectory_bfs[j-1], trajectory_bfs[j], 2)
+    for j in range(1, len(trajectory_rrt)):
+        pygame.draw.line(screen, RED, trajectory_rrt[j-1], trajectory_rrt[j], 2)
+
+    pygame.display.flip()
+    pygame.time.delay(50)
+
+pygame.quit()

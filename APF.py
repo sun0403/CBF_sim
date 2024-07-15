@@ -64,7 +64,7 @@ def find_path(x0, x_goal,rho_0,obs,alpha=0.001, max_iter=10000, tol=1e-3):
 
 
 #路径
-path_1 ,_,_= find_path(x0, x_goal,rho_01,obstacles)
+'''path_1 ,_,_= find_path(x0, x_goal,rho_01,obstacles)
 path_2 ,_,_= find_path(x0, x_goal,rho_02,obstacles)
 path_3 ,_,_= find_path(x0, x_goal,rho_03,obstacles)
 path_4 ,_,_= find_path(x0, x_goal,rho_04,obstacles)
@@ -83,4 +83,4 @@ plt.title('path')
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.legend(loc='upper right')
-plt.show()
+plt.show()'''
