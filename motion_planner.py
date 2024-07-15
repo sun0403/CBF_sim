@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 from collections import deque
+import random
 
 class MotionPlanner:
     def __init__(self, grid_size=500, grid_step=1):
@@ -13,6 +14,15 @@ class MotionPlanner:
                 return False
         return True
 
+    def select_random_planner(self, start_pos, goal_pos, obstacles):
+        methods = ['a_star', 'rrt','bfs']
+        selected_method = random.choice(methods)
+        if selected_method == 'a_star':
+            return self.a_star(start_pos, goal_pos, obstacles)
+        elif selected_method == 'rrt':
+            return self.rrt(start_pos, goal_pos, obstacles)
+        elif selected_method == 'bfs':
+            return self.bfs(start_pos, goal_pos, obstacles)
     def a_star(self, start, goal, obstacles):
         def heuristic(a, b):
             return np.linalg.norm(a - b)
