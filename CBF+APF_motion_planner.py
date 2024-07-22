@@ -78,17 +78,6 @@ def angle_between(v1, v2):
     cos_theta = np.dot(v1, v2) / (norm_v1 * norm_v2)
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))
 
-class MotionPlanner(mp.MotionPlanner):
-    def select_random_planner(self, start_pos, goal_pos, obstacles):
-        methods = ['a_star', 'rrt', 'bfs']
-        selected_method = random.choice(methods)
-        if selected_method == 'a_star':
-            return self.a_star(start_pos, goal_pos, obstacles)
-        elif selected_method == 'rrt':
-            return self.rrt(start_pos, goal_pos, obstacles)
-        elif selected_method == 'bfs':
-            return self.bfs(start_pos, goal_pos, obstacles)
-
 pygame.init()
 
 screen_width, screen_height = 500, 500
@@ -128,7 +117,7 @@ angle_threshold = np.pi/2 # 角度阈值，设为30度
 delta_t = 0.01
 running = True
 
-planner = MotionPlanner(grid_size=500, grid_step=5)
+planner = mp.MotionPlanner(grid_size=500, grid_step=5)
 path2 = planner.a_star(start_pos, goal_pos, obstacles)
 path_index_2 = 0
 trajectory_a_star2 = []
@@ -141,18 +130,18 @@ while running:
     screen.fill(WHITE)
     if path_index_2 < len(path2):
         user_goal_2 = np.array(path2[path_index_2])
-
+        next=np.array(path2[path_index_2+1])
         v = v_star(particle_pos_2, user_goal_2, obstacles, alpha=2.0, delta=delta, rho_0=rho_0)
         if np.linalg.norm(v) != 0:
             v_direction = v / np.linalg.norm(v)
         else:
             v_direction = np.zeros(2)
 
-        path_direction = (user_goal_2 - particle_pos_2) / np.linalg.norm(user_goal_2 - particle_pos_2)
+            path_direction = (user_goal_2 - particle_pos_2) / np.linalg.norm(user_goal_2 - particle_pos_2)
         angle_diff = angle_between(v_direction, path_direction)
 
         if angle_diff > angle_threshold or np.linalg.norm(user_goal_2 - particle_pos_2) > 20:
-            print("路径偏离，重新规划...")
+            print("REplanning")
             new_path = planner.rrt(particle_pos_2, goal_pos, obstacles)
 
             all_paths.append(path2[:path_index_2])  # 保存当前路径的已走部分

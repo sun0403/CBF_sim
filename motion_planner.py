@@ -15,7 +15,7 @@ class MotionPlanner:
         return True
 
     def select_random_planner(self, start_pos, goal_pos, obstacles):
-        methods = ['a_star', 'rrt','bfs']
+        methods = ['a_star', 'bfs','rrt']
         selected_method = random.choice(methods)
         if selected_method == 'a_star':
             return self.a_star(start_pos, goal_pos, obstacles)
