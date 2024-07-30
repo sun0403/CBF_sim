@@ -123,9 +123,9 @@ for i in range(10):
     previous_error = 0
     total_error = 0
 
-    k_p = 80.0
+    k_p = 100.0
     k_d = 5.0
-    k_i = 1.0
+    k_i = 0.5
 
     # Main loop
     start_time = time.time()

@@ -108,15 +108,15 @@ for i in range(10,20):
     d_obs = 20
     obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos,
                                           d_obs, screen_height)
-    K_att=50.0
-    K_rep=50.0
+    K_att=30.0
+    K_rep=60.0
     delta=1.0
     v_max = 500.0
     angle_threshold = np.pi / 2  # Set angle threshold to 60 degrees
     delta_t = 0.01
     running = True
 
-    rho_0=5.0
+    rho_0=10.0
 
     # Initialize the motion planner
     planner = mp.MotionPlanner(grid_size=500, grid_step=5)
@@ -130,9 +130,9 @@ for i in range(10,20):
     previous_error = 0
     total_error = 0
 
-    k_p = 80.0
+    k_p = 100.0
     k_d = 5.0
-    k_i = 1.0
+    k_i = 0.5
 
     # Main loop
     start_time = time.time()
@@ -152,7 +152,7 @@ for i in range(10,20):
             user_goal = particle_pos - u * delta_t
             user_goal_path.append(user_goal)
 
-            v = v_star(particle_pos, user_goal, obstacles, alpha=5.0,
+            v = v_star(particle_pos, user_goal, obstacles, alpha=1.0,
                        delta=delta, rho_0=rho_0)
             v_direction = v / np.linalg.norm(v)
             if np.linalg.norm(v_direction) == 0:
@@ -172,7 +172,7 @@ for i in range(10,20):
         else:
             user_goal = goal_pos
             user_goal_path.append(user_goal)
-            v = v_star(particle_pos, user_goal, obstacles, alpha=5.0,
+            v = v_star(particle_pos, user_goal, obstacles, alpha=1.0,
                        delta=delta, rho_0=rho_0)
             particle_pos += v * delta_t
 

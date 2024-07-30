@@ -73,12 +73,12 @@ for i in range(10):
     num_obstacles = 10
     rho0=50.0
     obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos,d_obs=20, field_size=screen_height)
-    angle_threshold = np.pi / 1.5
+    angle_threshold = np.pi / 2
     delta_t = 0.01
     v_max = 500.0
     running = True
 
-    K_attr = 10.0
+    K_attr = 20.0
     K_rep = 100.0
 
     # Initialize the motion planner
@@ -95,9 +95,9 @@ for i in range(10):
     total_error = 0
 
 
-    k_p = 80.0
+    k_p =100.0
     k_d =5.0
-    k_i = 1.0
+    k_i =0.5
 
     # Main loop
     start_time = time.time()
