@@ -7,7 +7,18 @@ import os
 
 def load_data(file_path):
     if file_path.endswith('.csv'):
-        return pd.read_csv(file_path)
+        try:
+            return pd.read_csv(file_path)
+        except pd.errors.ParserError as e:
+            print(f"Error parsing CSV file {file_path}: {e}")
+            with open(file_path, 'r') as file:
+                for i, line in enumerate(file, 1):
+                    try:
+                        pd.read_csv(pd.compat.StringIO(line))
+                    except pd.errors.ParserError:
+                        print(f"Error parsing line {i} in file {file_path}")
+                        break
+            raise e
     elif file_path.endswith('.json'):
         with open(file_path, 'r') as file:
             return pd.DataFrame(json.load(file))
@@ -24,11 +35,30 @@ def compute_human_fatigue(data):
         return key_presses
     else:
         return None
+def compute_velocity(positions, delta_t):
+    velocities = []
+    for i in range(1, len(positions)):
+        velocity = (positions[i] - positions[i - 1]) / delta_t
+        velocities.append(velocity)
+    return np.array(velocities)
+
 
 def compute_smoothness(data):
     positions = data['particle_position'].apply(lambda x: np.array(eval(x)))
-    diffs = np.diff(positions.tolist(), axis=0)
-    smoothness = np.var(diffs)
+    user_goals = data['user_goal'].apply(lambda x: np.array(eval(x)))
+
+    delta_t = data['timestamp'].diff().mean()  # 计算时间步长
+
+    particle_velocities = compute_velocity(positions.tolist(), delta_t)
+    user_goal_velocities = compute_velocity(user_goals.tolist(), delta_t)
+
+
+    min_length = min(len(particle_velocities), len(user_goal_velocities))
+    particle_velocities = particle_velocities[:min_length]
+    user_goal_velocities = user_goal_velocities[:min_length]
+
+    velocity_differences = np.linalg.norm(particle_velocities - user_goal_velocities, axis=1)
+    smoothness = np.sum(velocity_differences)
     return smoothness
 
 def compute_collisions(data):

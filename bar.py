@@ -43,12 +43,9 @@ def plot_individual_metrics(stats_dict):
 
 # 指定数据目录路径列表
 directories = [
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_csv',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_csv',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF+APF_csv',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/A_star_path',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/bfs_path',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/rrt_path'
+    #'/home/sun/CBF_sim/APF+CBF_motion_planner',
+    #'/home/sun/CBF_sim/CBF_motion_planner',
+'/home/sun/CBF_sim/APF_motion_planner',
 ]
 
 stats_dict = {}
