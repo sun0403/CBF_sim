@@ -43,8 +43,8 @@ def plot_individual_metrics(stats_dict):
 
 # 指定数据目录路径列表
 directories = [
-    '/home/sun/CBF_sim/APF+CBF_motion_planner',
-    '/home/sun/CBF_sim/CBF_motion_planner',
+    #'/home/sun/CBF_sim/APF+CBF_motion_planner',
+    #'/home/sun/CBF_sim/CBF_motion_planner',
 '/home/sun/CBF_sim/APF_motion_planner',
 ]
 

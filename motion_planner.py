@@ -92,7 +92,7 @@ class MotionPlanner:
 
         return []
 
-    def rrt(self, start, goal, obstacles, max_samples=1024, goal_sample_rate=0.1):
+    def rrt(self, start, goal, obstacles, max_samples=2048, goal_sample_rate=0.05):
         def get_random_point():
             if np.random.rand() < goal_sample_rate:
                 return goal
@@ -148,96 +148,7 @@ class MotionPlanner:
 
         return smoothed_path
 
-    def bidirectional_rrt(self, start, goal, obstacles, max_samples=1024, goal_sample_rate=0.1):
-        def get_random_point():
-            if np.random.rand() < goal_sample_rate:
-                return goal
-            return np.array([np.random.uniform(0, self.grid_size), np.random.uniform(0, self.grid_size)])
 
-        def get_nearest_node(nodes, point):
-            distances = [np.linalg.norm(node - point) for node in nodes]
-            nearest_index = np.argmin(distances)
-            return nodes[nearest_index], nearest_index
-
-        def is_collision_free(point1, point2, obstacles):
-            direction = point2 - point1
-            distance = np.linalg.norm(direction)
-            if distance == 0:  # Avoid division by zero
-                return False
-            direction = direction / (distance + 1e-6)  # Add a small value to avoid division by zero
-
-            for i in range(int(distance // self.grid_step)):
-                intermediate_point = point1 + direction * i * self.grid_step
-                if not self.is_free(intermediate_point, obstacles):
-                    return False
-            return self.is_free(point2, obstacles)
-
-        start = np.array(start)
-        goal = np.array(goal)
-
-        nodes_start = [start]
-        nodes_goal = [goal]
-        parents_start = {0: None}
-        parents_goal = {0: None}
-        connecting_node_index_start = None
-        connecting_node_index_goal = None
-
-        def add_node(nodes, parents, rand_point):
-            nearest_node, nearest_index = get_nearest_node(nodes, rand_point)
-            if np.linalg.norm(rand_point - nearest_node) == 0:  # Avoid division by zero
-                return None, None
-            direction = (rand_point - nearest_node) / np.linalg.norm(rand_point - nearest_node)
-            new_node = nearest_node + direction * self.grid_step
-            new_node = np.clip(new_node, 0, self.grid_size)
-
-            if is_collision_free(nearest_node, new_node, obstacles):
-                nodes.append(new_node)
-                parents[len(nodes) - 1] = nearest_index
-                return new_node, len(nodes) - 1
-            return None, None
-
-        for _ in range(max_samples):
-            rand_point = get_random_point()
-
-            new_node_start, index_start = add_node(nodes_start, parents_start, rand_point)
-            if new_node_start is not None:
-                nearest_node_goal, nearest_index_goal = get_nearest_node(nodes_goal, new_node_start)
-                if is_collision_free(nearest_node_goal, new_node_start, obstacles):
-                    connecting_node_index_start = index_start
-                    connecting_node_index_goal = nearest_index_goal
-                    break
-
-            rand_point = get_random_point()
-            new_node_goal, index_goal = add_node(nodes_goal, parents_goal, rand_point)
-            if new_node_goal is not None:
-                nearest_node_start, nearest_index_start = get_nearest_node(nodes_start, new_node_goal)
-                if is_collision_free(nearest_node_start, new_node_goal, obstacles):
-                    connecting_node_index_start = nearest_index_start
-                    connecting_node_index_goal = index_goal
-                    break
-
-        if connecting_node_index_start is None or connecting_node_index_goal is None:
-            return []  # No valid path found
-
-        # Reconstruct path from start to goal
-        path_start = []
-        current_index = connecting_node_index_start
-        while current_index is not None:
-            path_start.append(nodes_start[current_index])
-            current_index = parents_start[current_index]
-        path_start.reverse()
-
-        path_goal = []
-        current_index = connecting_node_index_goal
-        while current_index is not None:
-            path_goal.append(nodes_goal[current_index])
-            current_index = parents_goal[current_index]
-
-        full_path = path_start + path_goal[1:]  # Avoid duplicating the connecting node
-
-        smoothed_path = self.path_smoothing(full_path, obstacles, iterations=100, min_points=100)
-
-        return smoothed_path
 
     def path_smoothing(self, path, obstacles, iterations=100, min_points=50):
         def smooth_point(p1, p2):
@@ -256,3 +167,5 @@ class MotionPlanner:
                 break
 
         return smoothed_path
+
+

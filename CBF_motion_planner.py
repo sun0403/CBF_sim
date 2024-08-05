@@ -6,7 +6,7 @@ import cvxpy as cp
 import motion_planner as mp
 import pandas as pd
 
-for i in range(10):
+for i in range(0,20):
     np.random.seed(i)
 
     # Function definitions
@@ -105,7 +105,7 @@ for i in range(10):
     obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, screen_height)
 
     K = 200.0
-    v_max = 500.0
+    v_max = 600.0
     angle_threshold = np.pi / 3  # Set angle threshold to 60 degrees
     delta_t = 0.01
     running = True
@@ -147,7 +147,8 @@ for i in range(10):
 
             v = qp_solver(particle_pos, user_goal, obstacles, alpha=10.0,
                           v_max=v_max, K=K, d_obs=d)
-            v_direction = v / np.linalg.norm(v)
+            v_magnitude = np.linalg.norm(v)
+            v_direction = v / (v_magnitude + 1e-5)
             if np.linalg.norm(v_direction) == 0:
                 v_direction = np.zeros(2)
             path_direction = (user_goal - particle_pos) / np.linalg.norm(user_goal - particle_pos)
@@ -163,9 +164,17 @@ for i in range(10):
                 all_paths[-1].append(path_2[path_index].tolist())  # Update the latest path segment
         else:
             user_goal = goal_pos
+
             user_goal_path.append(user_goal)
             v = qp_solver(particle_pos, user_goal, obstacles, alpha=10.0,
-                          v_max=v_max, K=K, d_obs=d)
+            v_max=v_max, K=K, d_obs=d)
+            v_magnitude = np.linalg.norm(v)
+            v_direction = v / (v_magnitude + 1e-5)
+            if np.linalg.norm(v_direction) == 0:
+                v_direction = np.zeros(2)
+            if v_magnitude > v_max:
+                print(v_magnitude)
+                v = v_direction * v_max
             particle_pos += v * delta_t
 
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)

@@ -7,7 +7,7 @@ import pandas as pd
 
 
 
-for i in range(10):
+for i in range(20):
     np.random.seed(i)
     def rho(x, obs):
         """Calculate the distance from the particle to the edge of the obstacle."""
@@ -78,7 +78,7 @@ for i in range(10):
     v_max = 500.0
     running = True
 
-    K_attr = 20.0
+    K_attr = 40.0
     K_rep = 100.0
 
     # Initialize the motion planner
@@ -96,8 +96,8 @@ for i in range(10):
 
 
     k_p =100.0
-    k_d =5.0
-    k_i =0.5
+    k_d =1.0
+    k_i =0.2
 
     # Main loop
     start_time = time.time()
@@ -119,10 +119,12 @@ for i in range(10):
             user_goal_path.append(user_goal)
 
             v = grad_U_pot(particle_pos, user_goal, obstacles, rho_0=rho0)
-            v_direction = v / np.linalg.norm(v)
+
+            v_magnitude = np.linalg.norm(v)
+            v_direction = v / (v_magnitude + 1e-5)
             if np.linalg.norm(v_direction) == 0:
                 v_direction = np.zeros(2)
-            if np.any(v) > v_max:
+            if v_magnitude > v_max:
                 v = v_direction * v_max
 
 
@@ -145,8 +147,15 @@ for i in range(10):
             user_goal = goal_pos
             user_goal_path.append(user_goal)
             v = grad_U_pot(particle_pos, user_goal, obstacles, rho_0=rho0)
+            v_magnitude = np.linalg.norm(v)
+            v_direction = v / (v_magnitude + 1e-5)
+            if np.linalg.norm(v_direction) == 0:
+                v_direction = np.zeros(2)
+            if v_magnitude > v_max:
+                print(v_magnitude)
+                v = v_direction * v_max
             particle_pos += v * delta_t
-
+        print(v)
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
         particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
 
@@ -186,7 +195,7 @@ for i in range(10):
 
         # Draw user goal path
         for j in range(1, len(user_goal_path)):
-            pygame.draw.line(screen, BLUE, user_goal_path[j - 1].astype(int), user_goal_path[j].astype(int), 1)
+            pygame.draw.line(screen, BLUE, user_goal_path[j - 1].astype(int), user_goal_path[j].astype(int), 2)
 
         pygame.display.flip()
         pygame.time.delay(50)
