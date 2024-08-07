@@ -3,6 +3,9 @@ import heapq
 from collections import deque
 import random
 
+random.seed(10)
+
+
 class MotionPlanner:
     def __init__(self, grid_size=500, grid_step=1):
         self.grid_size = grid_size
@@ -14,17 +17,21 @@ class MotionPlanner:
                 return False
         return True
 
-    def select_random_planner(self, start_pos, goal_pos, obstacles):
+    def select_random_planner(self, start_pos, goal_pos, obstacles, return_method=False, method=None):
         methods = ['a_star', 'bfs', 'rrt']
-        selected_method = random.choice(methods)
+        selected_method = method if method else random.choice(methods)
+        path = None
         if selected_method == 'a_star':
-            return self.a_star(start_pos, goal_pos, obstacles)
+            path = self.a_star(start_pos, goal_pos, obstacles)
         elif selected_method == 'rrt':
-            return self.rrt(start_pos, goal_pos, obstacles)
+            path = self.rrt(start_pos, goal_pos, obstacles)
         elif selected_method == 'bfs':
-            return self.bfs(start_pos, goal_pos, obstacles)
-        elif selected_method == 'bidirectional_rrt':
-            return self.bidirectional_rrt(start_pos, goal_pos, obstacles)
+            path = self.bfs(start_pos, goal_pos, obstacles)
+
+        if return_method:
+            return np.array(path), selected_method
+        else:
+            return np.array(path)
 
     def a_star(self, start, goal, obstacles):
         def heuristic(a, b):
@@ -48,7 +55,8 @@ class MotionPlanner:
                     current = came_from[current]
                 path.append(start)
                 path.reverse()
-                return path
+                smoothed_path = self.path_smoothing(path, obstacles)
+                return [np.array(p) for p in smoothed_path]
 
             for dx in range(-self.grid_step, self.grid_step + 1, self.grid_step):
                 for dy in range(-self.grid_step, self.grid_step + 1, self.grid_step):
@@ -80,7 +88,8 @@ class MotionPlanner:
                     path.append(current)
                     current = came_from[current]
                 path.reverse()
-                return path
+                smoothed_path = self.path_smoothing(path, obstacles)
+                return [np.array(p) for p in smoothed_path]
 
             for dx in range(-self.grid_step, self.grid_step + 1, self.grid_step):
                 for dy in range(-self.grid_step, self.grid_step + 1, self.grid_step):
@@ -148,11 +157,9 @@ class MotionPlanner:
 
         return smoothed_path
 
-
-
-    def path_smoothing(self, path, obstacles, iterations=100, min_points=50):
+    def path_smoothing(self, path, obstacles, iterations=200):
         def smooth_point(p1, p2):
-            return (p1 + p2) / 2
+            return (np.array(p1) + np.array(p2)) / 2
 
         smoothed_path = path.copy()
         for _ in range(iterations):
@@ -161,11 +168,9 @@ class MotionPlanner:
                 new_point = smooth_point(smoothed_path[i - 1], smoothed_path[i + 1])
                 if self.is_free(new_point, obstacles):
                     new_path.append(new_point)
+                else:
+                    new_path.append(smoothed_path[i])
             new_path.append(smoothed_path[-1])
             smoothed_path = new_path
-            if len(smoothed_path) >= min_points:
-                break
 
         return smoothed_path
-
-

@@ -43,7 +43,8 @@ def compute_velocity(positions, delta_t):
     return np.array(velocities)
 
 
-def compute_smoothness(data):
+def compute_smoothness_old(data):
+    # Deviation from users intention
     positions = data['particle_position'].apply(lambda x: np.array(eval(x)))
     user_goals = data['user_goal'].apply(lambda x: np.array(eval(x)))
 
@@ -61,9 +62,24 @@ def compute_smoothness(data):
     smoothness = np.sum(velocity_differences)
     return smoothness
 
+def compute_smoothness(data):
+    # Deviation from users intention
+    velocity = data['velocity'].apply(lambda x: np.array(eval(x)))
+
+    delta_t = data['timestamp'].diff().mean()  # 计算时间步长
+
+    # Finit differences on velocity to get accelerations
+    particle_acceleration = compute_velocity(velocity.tolist(), delta_t)
+    speed = np.linalg.norm(particle_acceleration, axis=1)
+    smoothness = np.sum(speed)
+    return smoothness
+
 def compute_collisions(data):
     collisions = data['collision'].sum()
     return collisions
+def compute_success(data):
+    success = not any(data['success'] == False)
+    return success
 
 def compute_metrics(file_path):
     data = load_data(file_path)
@@ -73,11 +89,13 @@ def compute_metrics(file_path):
     human_fatigue = compute_human_fatigue(data)
     smoothness = compute_smoothness(data)
     collisions = compute_collisions(data)
+    success=compute_success(data)
 
     metrics = {
         'task_completion_time': task_completion_time,
         'smoothness': smoothness,
-        'collisions': collisions
+        'collisions': collisions,
+        'success':success
     }
 
     if human_fatigue is not None:
