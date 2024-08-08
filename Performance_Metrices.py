@@ -26,8 +26,10 @@ def load_data(file_path):
         raise ValueError("Unsupported file format")
 
 def compute_task_completion_times(data):
-    task_times = data['timestamp'].max() - data['timestamp'].min()
-    return task_times
+    return data['time_steps'].max()
+
+def compute_task_execution_times(data):
+    return data['timestamp'].max()
 
 def compute_human_fatigue(data):
     if 'key_pressed' in data.columns:
@@ -35,43 +37,41 @@ def compute_human_fatigue(data):
         return key_presses
     else:
         return None
-def compute_velocity(positions, delta_t):
+def finite_differences(x, delta_t):
     velocities = []
-    for i in range(1, len(positions)):
-        velocity = (positions[i] - positions[i - 1]) / delta_t
+    for i in range(1, len(x)):
+        velocity = (x[i] - x[i - 1]) / delta_t[i]
         velocities.append(velocity)
     return np.array(velocities)
 
-
-def compute_smoothness_old(data):
+def compute_alignment(data):
     # Deviation from users intention
     positions = data['particle_position'].apply(lambda x: np.array(eval(x)))
     user_goals = data['user_goal'].apply(lambda x: np.array(eval(x)))
 
-    delta_t = data['timestamp'].diff().mean()  # 计算时间步长
+    delta_t = data['delta_t'].tolist()  # 计算时间步长
 
-    particle_velocities = compute_velocity(positions.tolist(), delta_t)
-    user_goal_velocities = compute_velocity(user_goals.tolist(), delta_t)
-
+    particle_velocities = finite_differences(positions.tolist(), delta_t)
+    user_goal_velocities = finite_differences(user_goals.tolist(), delta_t)
 
     min_length = min(len(particle_velocities), len(user_goal_velocities))
     particle_velocities = particle_velocities[:min_length]
     user_goal_velocities = user_goal_velocities[:min_length]
 
     velocity_differences = np.linalg.norm(particle_velocities - user_goal_velocities, axis=1)
-    smoothness = np.sum(velocity_differences)
-    return smoothness
+    alignment = np.mean(velocity_differences)
+    return alignment
 
 def compute_smoothness(data):
     # Deviation from users intention
     velocity = data['velocity'].apply(lambda x: np.array(eval(x)))
-
-    delta_t = data['timestamp'].diff().mean()  # 计算时间步长
+    delta_t = data['delta_t']
 
     # Finit differences on velocity to get accelerations
-    particle_acceleration = compute_velocity(velocity.tolist(), delta_t)
+    particle_acceleration = finite_differences(velocity.tolist(), delta_t.tolist())
+
     speed = np.linalg.norm(particle_acceleration, axis=1)
-    smoothness = np.sum(speed)
+    smoothness = np.mean(speed)
     return smoothness
 
 def compute_collisions(data):
@@ -86,14 +86,18 @@ def compute_metrics(file_path):
     data['particle_position'] = data['particle_position'].apply(lambda x: str(x) if not isinstance(x, str) else x)
 
     task_completion_time = compute_task_completion_times(data)
+    task_execution_time = compute_task_execution_times(data)
     human_fatigue = compute_human_fatigue(data)
     smoothness = compute_smoothness(data)
+    alignment = compute_alignment(data)
     collisions = compute_collisions(data)
     success=compute_success(data)
 
     metrics = {
         'task_completion_time': task_completion_time,
+        'task_execution_time': task_execution_time,
         'smoothness': smoothness,
+        'alignment': alignment,
         'collisions': collisions,
         'success':success
     }
@@ -123,13 +127,14 @@ def main():
             print(f"Metrics for {file}: {metrics}")
 
         df = pd.DataFrame(all_metrics)
+        stats = df[['collisions', 'success']].agg(['mean', 'std', 'max', 'min'])
 
-        stats = {
-            'min': df.min(),
-            'max': df.max(),
-            'mean': df.mean(),
-            'std': df.std()
-        }
+        # Filtering successful trajectories
+        successful_df = df[df['success']]
+        successful_stats = successful_df[['task_completion_time', 'task_execution_time', 'smoothness', 'alignment']].agg(['mean', 'std', 'max', 'min'])
+
+        # Merging both statistics
+        stats = pd.concat([successful_stats, stats], axis=1).T
 
         print("\nOverall Statistics:")
         for stat_name, stat_values in stats.items():

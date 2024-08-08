@@ -32,6 +32,7 @@ def plot_individual_metrics(stats_dict):
     for stats in stats_dict.values():
         all_metrics.update(stats['mean'].index)
     all_metrics.discard('success')  # Remove 'success' from the metrics to plot
+    all_metrics.discard('collisions')  # Remove 'success' from the metrics to plot
 
     # Create subplots
     fig, axes = plt.subplots(len(all_metrics), 1, figsize=(14, 4 * len(all_metrics)))
@@ -92,11 +93,17 @@ def plot_success_rate(success_rates):
     plt.show()
 
 # Specify list of data directory paths
-directories = [
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_motion_planner',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_motion_planner',
-    '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF+CBF_motion_planner',
+# directories = [
+#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_motion_planner',
+#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_motion_planner',
+#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF+CBF_motion_planner',
+#
+# ]
 
+directories = [
+    './APF_motion_planner',
+    './CBF_motion_planner',
+    './APF+CBF_motion_planner',
 ]
 
 stats_dict = {}
@@ -131,13 +138,14 @@ for directory_path in directories:
 
     if all_metrics:
         df = pd.DataFrame(all_metrics)
+        stats = df[['collisions', 'success']].agg(['mean', 'std', 'max', 'min'])
 
-        stats = {
-            'mean': df.mean(),
-            'min': df.min(),
-            'max': df.max(),
-            'std': df.std()
-        }
+        # Filtering successful trajectories
+        successful_df = df[df['success']]
+        successful_stats = successful_df[['task_completion_time', 'task_execution_time', 'smoothness', 'alignment']].agg(['mean', 'std', 'max', 'min'])
+
+        # Merging both statistics
+        stats = pd.concat([successful_stats, stats], axis=1).T
 
         stats_dict[os.path.basename(directory_path)] = stats
         success_rates[os.path.basename(directory_path)] = success_count / total_count if total_count > 0 else 0
