@@ -67,6 +67,8 @@ k_i = 0.2
 
 for i in range(20):
     data = {
+        "delta_t": [],
+        "time_steps": [],
         "timestamp": [],
         "particle_position": [],
         "user_goal": [],
@@ -106,6 +108,7 @@ for i in range(20):
     running = True
     start_time = time.time()
     success = True  # Initialize success flag
+    time_steps = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -166,10 +169,12 @@ for i in range(20):
         if collision==True:
             print(f"{collision}")
         # Determine success
-        if collision:
+        if collision or time_steps > 10:
             success = False
 
+        data["delta_t"].append(delta_t)
         data["timestamp"].append(timestamp)
+        data["time_steps"].append(time_steps)
         data["particle_position"].append(particle_pos.tolist())
         data["user_goal"].append(user_goal.tolist())
         data["velocity"].append(v.tolist())
@@ -208,10 +213,15 @@ for i in range(20):
         pygame.display.flip()
         pygame.time.delay(50)
 
+        if not success:
+            break
+
+        time_steps += delta_t
+
     pygame.quit()
 
     # Define save path dynamically
-    save_path = os.path.join("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_motion_planner", f"{i}.csv")
+    save_path = os.path.join("/home/kay/projects/ip_related/CBF_sim/APF_motion_planner", f"{i}.csv")
     print(f"Saving data to: {save_path}")
 
     df = pd.DataFrame(data)

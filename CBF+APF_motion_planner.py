@@ -82,6 +82,8 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))
 
 data = {
+    "delta_t": [],
+    "time_steps": [],
     "timestamp": [],
     "particle_position": [],
     "user_goal": [],
@@ -140,6 +142,7 @@ for i in range(20):
     min_pid_output = -5000.0
 
     start_time = time.time()
+    time_steps = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -195,9 +198,12 @@ for i in range(20):
 
         timestamp = time.time() - start_time
         collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
-        if collision or np.all(v < 10.0):
+
+        if collision or time_steps > 10:
             success = False
 
+        data["delta_t"].append(delta_t)
+        data["time_steps"].append(time_steps)
         data["timestamp"].append(timestamp)
         data["particle_position"].append(particle_pos.tolist())
         data["user_goal"].append(user_goal.tolist())
@@ -239,6 +245,8 @@ for i in range(20):
 
         if not success:
             break
+
+        time_steps += delta_t
 
     pygame.quit()
     df = pd.DataFrame(data)
