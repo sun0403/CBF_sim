@@ -6,7 +6,7 @@ import random
 import motion_planner as mp
 import pandas as pd
 
-np.random.seed(67)
+np.random.seed(76)
 
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
@@ -92,7 +92,7 @@ data = {
     "success":[],
 }
 
-for i in range(20):
+for i in range(10):
     pygame.init()
 
     screen_width, screen_height = 500, 500
@@ -109,10 +109,10 @@ for i in range(20):
     goal_pos = np.array([450.0, 450.0])
     particle_pos = np.array([50.0, 50.0])
     num_obstacles = 10
-    d_obs = 30
+    d_obs = 60
     obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, screen_height)
-    K_att = 30.0
-    K_rep = 60.0
+    K_att = 50.0
+    K_rep = 50.0
     delta = 1.0
     v_max = 500.0
     angle_threshold = np.pi / 2

@@ -32,7 +32,7 @@ def plot_individual_metrics(stats_dict):
     for stats in stats_dict.values():
         all_metrics.update(stats['mean'].index)
     all_metrics.discard('success')  # Remove 'success' from the metrics to plot
-    all_metrics.discard('collisions')  # Remove 'success' from the metrics to plot
+    all_metrics.discard('collisions')  # Remove 'collisions' from the metrics to plot
 
     # Create subplots
     fig, axes = plt.subplots(len(all_metrics), 1, figsize=(14, 4 * len(all_metrics)))
@@ -41,7 +41,7 @@ def plot_individual_metrics(stats_dict):
     bar_width = 0.15
     x = np.arange(3)  # max, min, mean
 
-    # If there's only one metric, axes is not a list, make it a list for consistency
+    # If there is only one metric, axes is not a list, make it a list for consistency
     if len(all_metrics) == 1:
         axes = [axes]
 
@@ -92,14 +92,31 @@ def plot_success_rate(success_rates):
     plt.tight_layout()
     plt.show()
 
-# Specify list of data directory paths
-# directories = [
-#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_motion_planner',
-#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_motion_planner',
-#     '/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF+CBF_motion_planner',
-#
-# ]
+def plot_collision_rate(stats_dict):
+    # Create a bar plot for collision rates
+    fig, ax = plt.subplots(figsize=(10, 6))
+    directories = list(stats_dict.keys())
+    collision_rates = [stats_dict[dir]['mean']['collision_rate'] for dir in directories]
 
+    bar_width = 0.35
+    x = range(len(directories))
+
+    ax.bar(x, collision_rates, bar_width)
+
+    ax.set_xlabel('Directories')
+    ax.set_ylabel('Collision Rate')
+    ax.set_title('Collision Rate by Directory')
+    ax.set_xticks(x)
+    ax.set_xticklabels(directories, rotation=45, ha='right')
+    ax.set_ylim(0, 1)
+
+    for i, v in enumerate(collision_rates):
+        ax.text(i, v + 0.02, f"{v:.2%}", ha='center')
+
+    plt.tight_layout()
+    plt.show()
+
+# Specify list of data directory paths
 directories = [
     './APF_motion_planner',
     './CBF_motion_planner',
@@ -138,7 +155,7 @@ for directory_path in directories:
 
     if all_metrics:
         df = pd.DataFrame(all_metrics)
-        stats = df[['collisions', 'success']].agg(['mean', 'std', 'max', 'min'])
+        stats = df[['collisions', 'collision_rate', 'success']].agg(['mean', 'std', 'max', 'min'])
 
         # Filtering successful trajectories
         successful_df = df[df['success']]
@@ -157,3 +174,6 @@ plot_individual_metrics(stats_dict)
 
 # Plot success rate
 plot_success_rate(success_rates)
+
+# Plot collision rate
+plot_collision_rate(stats_dict)

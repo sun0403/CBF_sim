@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import motion_planner as mp
 
-np.random.seed(67)
+np.random.seed(76)
 
 def rho(x, obs):
     """Calculate the distance from the particle to the edge of the obstacle."""
@@ -53,19 +53,19 @@ screen_width, screen_height = 500, 500
 start_pos = np.array([50.0, 50.0])
 goal_pos = np.array([450.0, 450.0])
 num_obstacles = 10
-rho0 = 100.0
+rho0 = 20.0
 angle_threshold = 90
 delta_t = 0.01
 v_max = 500.0
-K_attr = 20.0
-K_rep = 40.0
+K_attr = 100.0
+K_rep = 100000.0
 
 # PID controller variables
 k_p = 100.0
 k_d = 1.0
 k_i = 0.2
 
-for i in range(20):
+for i in range(10):
     data = {
         "delta_t": [],
         "time_steps": [],
@@ -90,7 +90,7 @@ for i in range(20):
     ORANGE = (255, 165, 0)
 
     particle_pos = start_pos.copy()
-    obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs=20, field_size=screen_height)
+    obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs=60, field_size=screen_height)
 
     # Initialize the motion planner
     planner = mp.MotionPlanner(grid_size=500, grid_step=4)
@@ -169,7 +169,7 @@ for i in range(20):
         if collision==True:
             print(f"{collision}")
         # Determine success
-        if collision or time_steps > 10:
+        if collision or time_steps > 20:
             success = False
 
         data["delta_t"].append(delta_t)
@@ -221,7 +221,7 @@ for i in range(20):
     pygame.quit()
 
     # Define save path dynamically
-    save_path = os.path.join("/home/kay/projects/ip_related/CBF_sim/APF_motion_planner", f"{i}.csv")
+    save_path = os.path.join("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/APF_motion_planner", f"{i}.csv")
     print(f"Saving data to: {save_path}")
 
     df = pd.DataFrame(data)

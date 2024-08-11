@@ -6,7 +6,7 @@ import cvxpy as cp
 import motion_planner as mp
 import pandas as pd
 
-np.random.seed(67)
+np.random.seed(76)
 
 # Function definitions
 def h(x, obstacles, d_obs):
@@ -81,7 +81,7 @@ data = {
     "success":[],
 }
 
-for i in range(20):
+for i in range(10):
     pygame.init()
 
     screen_width, screen_height = 500, 500
@@ -98,15 +98,15 @@ for i in range(20):
     goal_pos = np.array([450.0, 450.0])
     particle_pos = np.array([50.0, 50.0])
     num_obstacles = 10
-    d_obs = 10
+    d_obs = 60.0
     obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, screen_height)
 
-    K = 100.0
+    K = 50.0
     v_max = 500.0
     angle_threshold = 90  # Set angle threshold to 60 degrees
     delta_t = 0.01
     running = True
-    d = 50
+    d=50.0
 
     # Initialize the motion planner
     planner = mp.MotionPlanner(grid_size=500, grid_step=4)
@@ -116,6 +116,7 @@ for i in range(20):
     trajectory = []
     all_paths = [np.array(path_2[:path_index + 1])]  # Initialize to include start point
     user_goal_path = []
+    v_old = [0.0, 0.0]
 
     previous_error = 0
     total_error = 0
@@ -143,8 +144,7 @@ for i in range(20):
             u = k_p * error_pos + k_d * error_delta + k_i * total_error
             user_goal = particle_pos - u * delta_t
             user_goal_path.append(user_goal)
-
-            v = qp_solver(particle_pos, user_goal, obstacles, alpha=10.0,
+            v = qp_solver(particle_pos, user_goal, obstacles, alpha=100.0,
                           v_max=v_max, K=K, d_obs=d)
             v_magnitude = np.linalg.norm(v)
             v_direction = v / (v_magnitude + 1e-5)
@@ -165,7 +165,7 @@ for i in range(20):
             user_goal = goal_pos
 
             user_goal_path.append(user_goal)
-            v = qp_solver(particle_pos, user_goal, obstacles, alpha=10.0,
+            v = qp_solver(particle_pos, user_goal, obstacles, alpha=100.0,
             v_max=v_max, K=K, d_obs=d)
             v_magnitude = np.linalg.norm(v)
             v_direction = v / (v_magnitude + 1e-5)
@@ -223,14 +223,13 @@ for i in range(20):
 
         pygame.display.flip()
         pygame.time.delay(50)
-        if not success:
-            break
+
 
         time_steps += delta_t
 
     pygame.quit()
     df = pd.DataFrame(data)
-    path = f"./CBF_motion_planner/{i}.csv"
+    path = f"/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF_motion_planner/{i}.csv"
     df.to_csv(path, index=False)
     print(f"Data saved to {i}.csv")
 

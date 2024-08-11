@@ -37,6 +37,7 @@ def compute_human_fatigue(data):
         return key_presses
     else:
         return None
+
 def finite_differences(x, delta_t):
     velocities = []
     for i in range(1, len(x)):
@@ -77,6 +78,12 @@ def compute_smoothness(data):
 def compute_collisions(data):
     collisions = data['collision'].sum()
     return collisions
+
+def compute_collision_rate(data):
+    collisions = compute_collisions(data)
+    total_samples = len(data)
+    return collisions / total_samples if total_samples > 0 else 0
+
 def compute_success(data):
     success = not any(data['success'] == False)
     return success
@@ -91,7 +98,8 @@ def compute_metrics(file_path):
     smoothness = compute_smoothness(data)
     alignment = compute_alignment(data)
     collisions = compute_collisions(data)
-    success=compute_success(data)
+    collision_rate = compute_collision_rate(data)
+    success = compute_success(data)
 
     metrics = {
         'task_completion_time': task_completion_time,
@@ -99,7 +107,8 @@ def compute_metrics(file_path):
         'smoothness': smoothness,
         'alignment': alignment,
         'collisions': collisions,
-        'success':success
+        'collision_rate': collision_rate,
+        'success': success
     }
 
     if human_fatigue is not None:
@@ -127,7 +136,7 @@ def main():
             print(f"Metrics for {file}: {metrics}")
 
         df = pd.DataFrame(all_metrics)
-        stats = df[['collisions', 'success']].agg(['mean', 'std', 'max', 'min'])
+        stats = df[['collisions', 'collision_rate', 'success']].agg(['mean', 'std', 'max', 'min'])
 
         # Filtering successful trajectories
         successful_df = df[df['success']]
