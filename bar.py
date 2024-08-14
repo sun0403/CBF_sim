@@ -27,12 +27,13 @@ def load_data(file_path):
         raise ValueError("Unsupported file format")
 
 def plot_individual_metrics(stats_dict):
-    # Collect all possible metrics across directories except 'success'
+    # Collect all possible metrics across directories except 'success' and 'collision_rate'
     all_metrics = set()
     for stats in stats_dict.values():
         all_metrics.update(stats['mean'].index)
     all_metrics.discard('success')  # Remove 'success' from the metrics to plot
     all_metrics.discard('collisions')  # Remove 'collisions' from the metrics to plot
+    all_metrics.discard('collision_rate')  # Remove 'collision_rate' from the metrics to plot
 
     # Create subplots
     fig, axes = plt.subplots(len(all_metrics), 1, figsize=(14, 4 * len(all_metrics)))
@@ -41,7 +42,7 @@ def plot_individual_metrics(stats_dict):
     bar_width = 0.15
     x = np.arange(3)  # max, min, mean
 
-    # If there is only one metric, axes is not a list, make it a list for consistency
+    # If there's only one metric, axes is not a list, make it a list for consistency
     if len(all_metrics) == 1:
         axes = [axes]
 
