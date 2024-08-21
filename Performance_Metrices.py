@@ -88,6 +88,11 @@ def compute_success(data):
     success = not any(data['success'] == False)
     return success
 
+def compute_success_rate(data):
+    success = data['success'].sum()
+    total = len(data)
+    return success / total if total > 0 else 0
+
 def compute_metrics(file_path):
     data = load_data(file_path)
     data['particle_position'] = data['particle_position'].apply(lambda x: str(x) if not isinstance(x, str) else x)
@@ -100,6 +105,7 @@ def compute_metrics(file_path):
     collisions = compute_collisions(data)
     collision_rate = compute_collision_rate(data)
     success = compute_success(data)
+    success_rate = compute_success_rate(data)
 
     metrics = {
         'task_completion_time': task_completion_time,
@@ -108,7 +114,8 @@ def compute_metrics(file_path):
         'alignment': alignment,
         'collisions': collisions,
         'collision_rate': collision_rate,
-        'success': success
+        'success': success,
+        'success_rate': success_rate
     }
 
     if human_fatigue is not None:
@@ -136,6 +143,9 @@ def main():
             print(f"Metrics for {file}: {metrics}")
 
         df = pd.DataFrame(all_metrics)
+        success_rate = df['success'].sum() / len(df) if len(df) > 0 else 0
+        print(f"\nOverall Success Rate for directory {path}: {success_rate:.2%}")
+
         stats = df[['collisions', 'collision_rate', 'success']].agg(['mean', 'std', 'max', 'min'])
 
         # Filtering successful trajectories

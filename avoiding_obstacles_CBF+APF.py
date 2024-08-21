@@ -4,12 +4,8 @@ import sys
 import time
 import pandas as pd
 
-K_att = 100.0
-K_rep = 100.0
-delta = 0.001
-rho_0=20
 
-np.random.seed(10)
+np.random.seed(76)
 def rho(x, obs):
     return np.linalg.norm(x - obs['position']) - obs['radius']
 
@@ -61,163 +57,189 @@ def v_star(x, x_goal, obstacles, alpha, delta, rho_0):
 
     return v
 
-pygame.init()
 
+
+
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, field_size=500):
+    obstacles = []
+    for _ in range(num_obstacles):
+        while True:
+            position = np.random.rand(2) * field_size
+            new_obstacle = {'position': position, 'radius': 50}
+            if (np.linalg.norm(position - start_pos) > (new_obstacle['radius'] + d_obs) and
+                    np.linalg.norm(position - goal_pos) > (new_obstacle['radius'] + d_obs) and
+                    all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in
+                        obstacles)):
+                obstacles.append(new_obstacle)
+                break
+    return obstacles
+
+
+
+
+pygame.init()
 screen_width, screen_height = 500, 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Particle Control Simulation")
-
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-
-
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, field_size=500):
-    obstacles = []
-    for _ in range(num_obstacles):
-        while True:
-            position = np.random.rand(2) * field_size
-            new_obstacle = {'position': position, 'radius': 50}
-            if (np.linalg.norm(position - start_pos) > new_obstacle['radius'] and
-                np.linalg.norm(position - goal_pos) > new_obstacle['radius'] and
-                all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in obstacles)):
-                obstacles.append(new_obstacle)
-                break
-    return obstacles
-
-start_pos = np.array([50.0, 50.0])
-goal_pos = np.array([450.0, 450.0])
-target_goal = np.array([450.0, 450.0])
-particle_pos = np.array([50.0, 50.0])
-num_obstacles = 10
-limlit=100
-obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos)
-boundary_thickness =2
-boundaries = [
-    {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
-    {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]), 'radius': boundary_thickness},
-    {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
-    {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
-]
 delta_t = 0.01
-particle_speed = 200
-alpha = 0.5
+particle_speed = 500
+alpha = 10.0
+for i in range(10):
+    data = {
+        "delta_t":[],
+        "time_steps":[],
+        "timestamp": [],
+        "particle_position": [],
+        "user_goal": [],
+        "velocity": [],
+        "collision": [],
+        "key_pressed": [],
+        "success": [],
+    }
+    start_pos = np.array([50.0, 50.0])
+    goal_pos = np.array([450.0, 450.0])
+    target_goal = np.array([450.0, 450.0])
+    particle_pos = np.array([50.0, 50.0])
+    num_obstacles = 10
+    limlit = 500
+    d = 60
 
-data = {
-    "timestamp": [],
-    "particle_position": [],
-    "user_goal": [],
-    "velocity": [],
-    "collision": [],
-    "key_pressed": []
-}
+    K_att = 100.0
+    K_rep = 100.0
+    rho_0 = 10.0
+    obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs=d)
+    boundary_thickness = 2
+    boundaries = [
+        {'position': np.array([screen_width / 2, boundary_thickness / 2]), 'radius': boundary_thickness},
+        {'position': np.array([screen_width / 2, screen_height - boundary_thickness / 2]),
+         'radius': boundary_thickness},
+        {'position': np.array([boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness},
+        {'position': np.array([screen_width - boundary_thickness / 2, screen_height / 2]), 'radius': boundary_thickness}
+    ]
 
-start_time = time.time()
 
 
 
 
-velocity = np.array([0.0, 0.0])
-running = True
-user_goal = np.array([0.0,0.0])
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q:
+
+
+    velocity = np.array([0.0, 0.0])
+    running = True
+    success = True
+    user_goal = np.array([0.0,0.0])
+    start_time = time.time()
+    time_steps = 0
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    running = False
 
-    keys = pygame.key.get_pressed()
-    left_pressed = False
-    key_pressed = None
-    if keys[pygame.K_LEFT]:
-        left_pressed = True
-        key_pressed = "LEFT"
-        velocity[0] -= particle_speed * delta_t
+        keys = pygame.key.get_pressed()
+        left_pressed = False
+        key_pressed = None
+        if keys[pygame.K_LEFT]:
+            left_pressed = True
+            key_pressed = "LEFT"
+            velocity[0] -= particle_speed * delta_t
 
-    right_pressed = False
-    if keys[pygame.K_RIGHT]:
-        right_pressed = True
-        key_pressed = "RIGHT"
-        velocity[0] += particle_speed * delta_t
+        right_pressed = False
+        if keys[pygame.K_RIGHT]:
+            right_pressed = True
+            key_pressed = "RIGHT"
+            velocity[0] += particle_speed * delta_t
 
-    up_pressed = False
-    if keys[pygame.K_UP]:
-        up_pressed = True
-        key_pressed = "UP"
-        velocity[1] -= particle_speed * delta_t
+        up_pressed = False
+        if keys[pygame.K_UP]:
+            up_pressed = True
+            key_pressed = "UP"
+            velocity[1] -= particle_speed * delta_t
 
-    down_pressed = False
-    if keys[pygame.K_DOWN]:
-        down_pressed = True
-        key_pressed = "DOWN"
-        velocity[1] += particle_speed * delta_t
+        down_pressed = False
+        if keys[pygame.K_DOWN]:
+            down_pressed = True
+            key_pressed = "DOWN"
+            velocity[1] += particle_speed * delta_t
 
-    if velocity[0] > limlit:
-        velocity[0] = limlit
-    if velocity[0] < -limlit:
-        velocity[0] = -limlit
-    if velocity[1] > limlit:
-        velocity[1] = limlit
-    if velocity[1] < -limlit:
-        velocity[1] = -limlit
+        if velocity[0] > limlit:
+            velocity[0] = limlit
+        if velocity[0] < -limlit:
+            velocity[0] = -limlit
+        if velocity[1] > limlit:
+            velocity[1] = limlit
+        if velocity[1] < -limlit:
+            velocity[1] = -limlit
 
-    # Check if any key is pressed
-    any_key_pressed = left_pressed or right_pressed or up_pressed or down_pressed
+        # Check if any key is pressed
+        any_key_pressed = left_pressed or right_pressed or up_pressed or down_pressed
 
-    # If no key is pressed, set velocity to zero
-    if not any_key_pressed:
-        velocity *= 0.0
-
-
-
-    user_goal = particle_pos + velocity * delta_t
-    v = v_star(particle_pos, user_goal, obstacles, alpha, delta=0.001, rho_0=rho_0)
-    particle_pos += v*0.05
+        # If no key is pressed, set velocity to zero
+        if not any_key_pressed:
+            velocity *= 0.0
 
 
-    timestamp = time.time() - start_time
-    collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
 
-    data["timestamp"].append(timestamp)
-    data["particle_position"].append(particle_pos.tolist())
-    data["user_goal"].append(user_goal.tolist())
-    data["velocity"].append(velocity.tolist())
-    data["collision"].append(collision)
-    data["key_pressed"].append(key_pressed)
+        user_goal = particle_pos + velocity * delta_t
+        v = v_star(particle_pos, user_goal, obstacles, alpha, delta=1.0, rho_0=rho_0)
+        v = np.clip(v, -500, 500)
+        particle_pos += v*0.01
 
-    print(f'Desired user goal: {user_goal}')
-    print(f'Actual particle position: {particle_pos}')
-    print(f'Desired user velocity: {velocity}')
-    print(f'Actual velocity from v: {v}')
 
-    if np.linalg.norm(particle_pos - target_goal) < 5:
-        print("Particle reached goal")
-        break
+        timestamp = time.time() - start_time
+        collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
 
-    particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
-    particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
+        if collision or time_steps > 10:
+            success = False
 
-    screen.fill(WHITE)
 
-    pygame.draw.circle(screen, GREEN, start_pos.astype(int), 10)
-    pygame.draw.circle(screen, RED, goal_pos.astype(int), 10)
+        data["delta_t"].append(delta_t)
+        data["time_steps"].append(time_steps)
+        data["timestamp"].append(timestamp)
+        data["particle_position"].append(particle_pos.tolist())
+        data["user_goal"].append(user_goal.tolist())
+        data["velocity"].append(velocity.tolist())
+        data["collision"].append(collision)
+        data["key_pressed"].append(key_pressed)
+        data["success"].append(success)
 
-    for obstacle in obstacles:
-        pygame.draw.circle(screen, BLACK, obstacle['position'].astype(int), int(obstacle['radius']))
+        print(f'Desired user goal: {user_goal}')
+        print(f'Actual particle position: {particle_pos}')
+        print(f'Desired user velocity: {velocity}')
+        print(f'Actual velocity from v: {v}')
 
-    pygame.draw.circle(screen, BLUE, particle_pos.astype(int), 5)
-    pygame.draw.circle(screen, BLUE, target_goal.astype(int), 2)
-    pygame.display.flip()
-    pygame.time.delay(100)
+        if np.linalg.norm(particle_pos - target_goal) < 5:
+            print("Particle reached goal")
+            break
 
+        particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
+        particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
+
+        screen.fill(WHITE)
+
+        pygame.draw.circle(screen, GREEN, start_pos.astype(int), 10)
+        pygame.draw.circle(screen, RED, goal_pos.astype(int), 10)
+
+        for obstacle in obstacles:
+            pygame.draw.circle(screen, BLACK, obstacle['position'].astype(int), int(obstacle['radius']))
+
+        pygame.draw.circle(screen, BLUE, particle_pos.astype(int), 5)
+        pygame.draw.circle(screen, BLUE, target_goal.astype(int), 2)
+        pygame.display.flip()
+        pygame.time.delay(50)
+        time_steps += delta_t
+
+
+
+    df=pd.DataFrame(data)
+    path=f"./CBF+APF_csv/{i}.csv"
+    df.to_csv(path, index=False)
+    print("Data saved to CBF+APF.csv")
 pygame.quit()
-
-df=pd.DataFrame(data)
-df.to_csv("/Users/yuanzhengsun/Desktop/CBF_sim/CBF/CBF+APF_csv/CBF+APF10.csv", index=False)
-print("Data saved to CBF+APF3.csv")
-sys.exit()

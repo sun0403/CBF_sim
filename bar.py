@@ -31,7 +31,10 @@ def plot_individual_metrics(stats_dict):
     all_metrics = set()
     for stats in stats_dict.values():
         all_metrics.update(stats['mean'].index)
-    all_metrics.discard('success')  # Remove 'success' from the metrics to plot
+    print("All metrics:", all_metrics)
+    all_metrics.discard('success')
+    # Remove 'success' from the metrics to plot
+    all_metrics.discard('success_rate')
     all_metrics.discard('collisions')  # Remove 'collisions' from the metrics to plot
     all_metrics.discard('collision_rate')  # Remove 'collision_rate' from the metrics to plot
 
@@ -117,11 +120,35 @@ def plot_collision_rate(stats_dict):
     plt.tight_layout()
     plt.show()
 
+def plot_success_rate(stats_dict):
+    # Create a bar plot for collision rates
+    fig, ax = plt.subplots(figsize=(10, 6))
+    directories = list(stats_dict.keys())
+    success_rates = [stats_dict[dir]['mean']['success_rate'] for dir in directories]
+
+    bar_width = 0.35
+    x = range(len(directories))
+
+    ax.bar(x, success_rates, bar_width)
+
+    ax.set_xlabel('Directories')
+    ax.set_ylabel('Success Rate')
+    ax.set_title('Success Rate')
+    ax.set_xticks(x)
+    ax.set_xticklabels(directories, rotation=45, ha='right')
+    ax.set_ylim(0, 1)
+
+    for i, v in enumerate(success_rates):
+        ax.text(i, v + 0.02, f"{v:.2%}", ha='center')
+
+    plt.tight_layout()
+    plt.show()
+
 # Specify list of data directory paths
 directories = [
-    './APF_motion_planner',
-    './CBF_motion_planner',
-    './APF+CBF_motion_planner',
+    './APF_csv',
+    './CBF+APF_csv',
+    './CBF_csv'
 ]
 
 stats_dict = {}
@@ -135,46 +162,46 @@ for directory_path in directories:
     files = glob.glob(f"{directory_path}/*.csv")
     all_metrics = []
 
-    success_count = 0
-    total_count = 0
+
 
     for file in files:
         data = load_data(file)
-
-        # Ensure 'success' column exists
-        if 'success' not in data.columns:
-            print(f"File {file} does not contain 'success' column. Skipping...")
-            continue
-
         metrics = compute_metrics(file)
         all_metrics.append(metrics)
         print(f"Metrics for {file}: {metrics}")
 
-        if metrics['success']:
-            success_count += 1
-        total_count += 1
-
     if all_metrics:
         df = pd.DataFrame(all_metrics)
-        stats = df[['collisions', 'collision_rate', 'success']].agg(['mean', 'std', 'max', 'min'])
 
-        # Filtering successful trajectories
+        # 首先计算已经存在的指标
+        stats = df[['collisions', 'collision_rate', 'success','success_rate']].agg(['mean', 'std', 'max', 'min'])
+
+        # 过滤成功的记录
         successful_df = df[df['success']]
-        successful_stats = successful_df[['task_completion_time', 'task_execution_time', 'smoothness', 'alignment']].agg(['mean', 'std', 'max', 'min'])
 
-        # Merging both statistics
+        # 检查human_fatigue是否存在
+        if 'human_fatigue' in successful_df.columns:
+            # 如果存在，计算其统计信息
+            successful_stats = successful_df[
+                ['task_completion_time', 'task_execution_time', 'smoothness', 'alignment', 'human_fatigue']].agg(
+                ['mean', 'std', 'max', 'min'])
+        else:
+            # 如果不存在，则不计算human_fatigue
+            successful_stats = successful_df[
+                ['task_completion_time', 'task_execution_time', 'smoothness', 'alignment']].agg(
+                ['mean', 'std', 'max', 'min'])
+
+        # 合并统计结果
         stats = pd.concat([successful_stats, stats], axis=1).T
 
+        # 将统计信息保存到stats_dict中
         stats_dict[os.path.basename(directory_path)] = stats
-        success_rates[os.path.basename(directory_path)] = success_count / total_count if total_count > 0 else 0
-    else:
-        print(f"No CSV files found in directory {directory_path}.")
 
 # Plot performance metrics
 plot_individual_metrics(stats_dict)
 
-# Plot success rate
-plot_success_rate(success_rates)
 
 # Plot collision rate
 plot_collision_rate(stats_dict)
+
+plot_success_rate(stats_dict)
