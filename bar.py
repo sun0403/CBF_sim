@@ -146,9 +146,16 @@ def plot_success_rate(stats_dict):
 
 # Specify list of data directory paths
 directories = [
+    #'./l/APF',
+    #'./l/APF+CBF',
+    #'./l/CBF'
+    #'./w/APF',
+    #'./w/CBF',
+    #'./w/APF+CBF',
+
     './APF_csv',
-    './CBF+APF_csv',
-    './CBF_csv'
+    './CBF_csv',
+    './CBF+APF_csv'
 ]
 
 stats_dict = {}

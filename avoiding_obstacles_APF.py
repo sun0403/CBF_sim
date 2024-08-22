@@ -58,7 +58,7 @@ delta_t = 0.01
 particle_speed = 500
 K_attr = 100.0
 K_rep = 10000.0
-rho0 = 20.0
+rho0 = 50.0
 for i in range(10):
     start_pos = np.array([50.0, 50.0])
     target_goal=np.array([450.0, 450.0])
@@ -191,7 +191,8 @@ for i in range(10):
         time_steps += delta_t
 
     df = pd.DataFrame(data)
-    path = f"./APF_csv/{i}.csv"
+    #path = f"./l/APF/{i}.csv"
+    path=f"./APF_csv/{i}.csv"
     df.to_csv(path, index=False)
     print(f"Data saved to {i}.csv")
 

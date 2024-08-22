@@ -215,7 +215,8 @@ for i in range(10):
 
 
     df = pd.DataFrame(data)
-    path=path = f"./CBF_csv/{i}.csv"
+    #path = f"./l/CBF/{i}.csv"
+    path=f"./CBF_csv/{i}.csv"
     df.to_csv(path, index=False)
     print("Data saved to CBF.csv")
 pygame.quit()

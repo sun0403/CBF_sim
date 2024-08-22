@@ -89,7 +89,7 @@ BLUE = (0, 0, 255)
 
 delta_t = 0.01
 particle_speed = 500
-alpha = 10.0
+alpha = 1.0
 for i in range(10):
     data = {
         "delta_t":[],
@@ -239,7 +239,8 @@ for i in range(10):
 
 
     df=pd.DataFrame(data)
+    #path=f"./l/APF+CBF/{i}.csv"
     path=f"./CBF+APF_csv/{i}.csv"
     df.to_csv(path, index=False)
-    print("Data saved to CBF+APF.csv")
+    print("Data saved to APF+CBF.csv")
 pygame.quit()
