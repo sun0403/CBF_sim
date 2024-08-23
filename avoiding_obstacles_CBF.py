@@ -118,6 +118,8 @@ for i in range(10):
     success = True
     user_goal = np.array([0.0, 0.0])
     time_steps = 0
+    trajectory = []
+    user_goal_path = []
     start_time = time.time()
 
 
@@ -170,6 +172,7 @@ for i in range(10):
             velocity *= 0.0
 
         user_goal = particle_pos + velocity * delta_t
+        user_goal_path.append(user_goal)
         v = qp_solver(particle_pos, user_goal, obstacles, alpha, d_obs,v_max)
         particle_pos += v * 0.01
         timestamp = time.time() - start_time
@@ -197,6 +200,7 @@ for i in range(10):
 
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
         particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
+        trajectory.append(particle_pos.copy())
 
         screen.fill(WHITE)
 
@@ -208,6 +212,10 @@ for i in range(10):
 
         pygame.draw.circle(screen, BLUE, particle_pos.astype(int), 5)
         pygame.draw.circle(screen, BLUE, target_goal.astype(int), 2)
+        for j in range(1, len(user_goal_path)):
+            pygame.draw.line(screen, BLUE, user_goal_path[j - 1].astype(int), user_goal_path[j].astype(int), 1)
+        for j in range(1, len(trajectory)):
+            pygame.draw.line(screen, RED, trajectory[j - 1].astype(int), trajectory[j].astype(int), 1)
         pygame.display.flip()
         pygame.time.delay(50)
         time_steps += delta_t

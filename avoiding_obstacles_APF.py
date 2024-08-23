@@ -90,7 +90,8 @@ for i in range(10):
     # Add boundaries to the list of obstacles
     obstacles.extend(boundaries)
 
-
+    trajectory = []
+    user_goal_path = []
     running = True
     user_goal = np.array([0.0,0.0])
 
@@ -147,6 +148,7 @@ for i in range(10):
             velocity *= 0.0
         #update the postion
         user_goal=particle_pos+delta_t*velocity
+        user_goal_path.append(user_goal)
         F = grad_U_pot(particle_pos, user_goal, obstacles, rho0)
         F = np.clip(F, -500, 500)
         particle_pos += F * delta_t
@@ -175,6 +177,8 @@ for i in range(10):
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
         particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
 
+        trajectory.append(particle_pos.copy())
+
         screen.fill(WHITE)
         pygame.draw.circle(screen, GREEN, start_pos, 10)
         #pygame.draw.circle(screen, RED, goal_pos, 10)
@@ -186,6 +190,10 @@ for i in range(10):
         # draw the position
         pygame.draw.circle(screen, BLUE, particle_pos, 5)
         pygame.draw.circle(screen, BLUE, target_goal, 2)
+        for j in range(1, len(user_goal_path)):
+            pygame.draw.line(screen, BLUE, user_goal_path[j - 1].astype(int), user_goal_path[j].astype(int), 1)
+        for j in range(1, len(trajectory)):
+            pygame.draw.line(screen, RED, trajectory[j - 1].astype(int), trajectory[j].astype(int), 1)
         pygame.display.flip()
         pygame.time.delay(50)
         time_steps += delta_t
