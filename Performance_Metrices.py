@@ -72,7 +72,7 @@ def compute_smoothness(data):
     particle_acceleration = finite_differences(velocity.tolist(), delta_t.tolist())
 
     speed = np.linalg.norm(particle_acceleration, axis=1)
-    smoothness = np.mean(speed)
+    smoothness = np.sqrt(np.mean(speed))
     return smoothness
 
 def compute_collisions(data):

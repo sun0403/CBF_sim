@@ -2,6 +2,7 @@ import numpy as np
 import heapq
 from collections import deque
 import random
+from scipy.signal import butter, lfilter
 
 random.seed(10)
 
@@ -10,6 +11,18 @@ class MotionPlanner:
     def __init__(self, grid_size=500, grid_step=1):
         self.grid_size = grid_size
         self.grid_step = grid_step
+        sampling_time = 0.01  # Sampling time in seconds
+        sampling_frequency = 1 / sampling_time  # Sampling frequency in Hz
+
+        # Define filter parameters
+        order = 1  # Filter order
+        cutoff_frequency = 30  # Desired cutoff frequency in Hz
+
+        # Normalize the frequency
+        normalized_cutoff = cutoff_frequency / (0.5 * sampling_frequency)
+
+        # Design the Butterworth filter
+        self.filter_b, self.filter_a = butter(order, normalized_cutoff, btype='low', analog=False)
 
     def is_free(self, pos, obstacles):
         for obs in obstacles:
@@ -18,7 +31,9 @@ class MotionPlanner:
         return True
 
     def select_random_planner(self, start_pos, goal_pos, obstacles, return_method=False, method=None):
-        methods = ['a_star', 'bfs', 'rrt']
+        methods = ['a_star'
+            , 'bfs',
+                   'rrt']
         selected_method = method if method else random.choice(methods)
         path = None
         if selected_method == 'a_star':
@@ -164,6 +179,7 @@ class MotionPlanner:
         smoothed_path = path.copy()
         for _ in range(iterations):
             new_path = [smoothed_path[0]]
+            #filtered_smooth_path = lfilter(self.filter_b,self.filter_a,smoothed_path[0])
             for i in range(1, len(smoothed_path) - 1):
                 new_point = smooth_point(smoothed_path[i - 1], smoothed_path[i + 1])
                 if self.is_free(new_point, obstacles):

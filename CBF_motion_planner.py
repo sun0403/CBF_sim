@@ -2,64 +2,53 @@ import time
 import pygame
 import numpy as np
 import sys
-import random
+import cvxpy as cp
 import motion_planner as mp
 import pandas as pd
 
 np.random.seed(76)
 
-def rho(x, obs):
-    return np.linalg.norm(x - obs['position']) - obs['radius']
-
-def U_rep(x, obstacles, rho_0):
-    U_obs = 0
+# Function definitions
+def h(x, obstacles, d_obs):
+    """Calculate the distance from the particle to each obstacle."""
+    h = []
     for obs in obstacles:
-        if rho(x, obs) < rho_0:
-            U_obs += 0.5 * K_rep * (1/rho(x, obs) - 1/rho_0)**2
-    return U_obs
+        h.append(np.linalg.norm(x - obs['position']) - d_obs)
+    return h
 
-def grad_U_rep(x, obstacles, rho_0):
-    grad_U_obs = np.zeros_like(x, dtype=np.float64)
+def grad_h(x, obstacles):
+    """Calculate the gradient of the distance function."""
+    grad_h = []
     for obs in obstacles:
-        rho_x = rho(x, obs)
-        if rho_x <= rho_0:
-            grad_U_obs += K_rep * (1/rho_x - 1/rho_0) * (-1/rho_x**2) * (x - obs['position']) / np.linalg.norm(x - obs['position'])
-    return grad_U_obs
+        grad_h.append((x - obs['position']) / np.linalg.norm(x - obs['position']))
+    return grad_h
 
-def U_attra(x, x_goal):
-    return 0.5 * K_att * np.linalg.norm(x - x_goal)**2
+def v_des(x, x_goal, K):
+    """Calculate the desired velocity."""
+    return -K * (x - x_goal)
 
-def grad_U_att(x, x_goal):
-    return K_att * (x - x_goal)
+def qp_solver(x, x_goal, obstacles, alpha, d_obs, v_max, K):
+    """Solve the QP problem to determine the optimal velocity."""
+    v = cp.Variable(2)
+    v_desired = v_des(x, x_goal, K)
 
-def h(x, obstacles, delta, rho_0):
-    U_rep_value = U_rep(x, obstacles, rho_0)
-    return 1 / (1 + U_rep_value) - delta
+    h_values = h(x, obstacles, d_obs)
+    grad_h_values = grad_h(x, obstacles)
 
-def grad_h(x, obstacles, rho_0):
-    U_rep_value = U_rep(x, obstacles, rho_0)
-    grad_U_rep_value = grad_U_rep(x, obstacles, rho_0)
-    return -grad_U_rep_value / (1 + U_rep_value)**2
+    constraints = []
+    for h_val, grad_h_val in zip(h_values, grad_h_values):
+        constraints.append(grad_h_val @ v >= -alpha * h_val)
 
-def v_star(x, x_goal, obstacles, alpha, delta, rho_0):
-    v_att = -grad_U_att(x, x_goal)
-    h_value = h(x, obstacles, delta, rho_0)
-    grad_h_value = grad_h(x, obstacles, rho_0)
-    norm_grad_h_value = np.dot(grad_h_value, grad_h_value)
+    constraints.append(cp.norm(v, 2) <= v_max)
 
-    if norm_grad_h_value == 0:
-        return v_att
+    objective = cp.Minimize(cp.sum_squares(v - v_desired))
+    prob = cp.Problem(objective, constraints)
+    prob.solve(solver=cp.SCS, verbose=False)
 
-    Phi = np.dot(grad_h_value, v_att) + alpha * h_value
+    return v.value
 
-    if Phi < 0:
-        v = v_att + (-Phi / np.dot(grad_h_value, grad_h_value)) * grad_h_value
-    else:
-        v = v_att
-
-    return v
-
-def generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, field_size=500):
+def generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, field_size):
+    """Generate a list of random obstacles ensuring they don't overlap with the start and goal positions."""
     obstacles = []
     for _ in range(num_obstacles):
         while True:
@@ -67,13 +56,13 @@ def generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, field_s
             new_obstacle = {'position': position, 'radius': 50}
             if (np.linalg.norm(position - start_pos) > (new_obstacle['radius'] + d_obs) and
                     np.linalg.norm(position - goal_pos) > (new_obstacle['radius'] + d_obs) and
-                    all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in
-                        obstacles)):
+                    all(np.linalg.norm(position - obs['position']) > (new_obstacle['radius'] + obs['radius']) for obs in obstacles)):
                 obstacles.append(new_obstacle)
                 break
     return obstacles
 
 def angle_between(v1, v2):
+    """Calculate the angle between two vectors."""
     norm_v1 = np.linalg.norm(v1)
     norm_v2 = np.linalg.norm(v2)
     if norm_v1 == 0 or norm_v2 == 0:
@@ -82,28 +71,35 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))
 
 
+
 pygame.init()
 
 screen_width, screen_height = 500, 500
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Particle Simulation Control")
-
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-
-start_pos = np.array([50.0, 50.0])
-goal_pos = np.array([450.0, 450.0])
-K_att = 50.0
-K_rep = 50.0
-delta = 1.0
+K = 50.0
 v_max = 500.0
-angle_threshold = np.pi / 2
+angle_threshold = 90  # Set angle threshold to 60 degrees
 delta_t = 0.01
+d=50.0
 
 for i in range(10):
+
+
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    RED = (255, 0, 0)
+    GREEN = (0, 255, 0)
+    BLUE = (0, 0, 255)
+
+    start_pos = np.array([50.0, 50.0])
+    goal_pos = np.array([450.0, 450.0])
+    particle_pos = np.array([50.0, 50.0])
+    num_obstacles = 10
+    d_obs = 60.0
+    obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, screen_height)
+
+
     data = {
         "delta_t": [],
         "time_steps": [],
@@ -114,38 +110,28 @@ for i in range(10):
         "collision": [],
         "success": [],
     }
-
-    particle_pos = np.array([50.0, 50.0])
-    num_obstacles = 10
-    d_obs = 60
-    obstacles = generate_random_obstacles(num_obstacles, start_pos, goal_pos, d_obs, screen_height)
-
     running = True
-    success = True
-
-    rho_0 = 5.0
-
     # Initialize the motion planner
     planner = mp.MotionPlanner(grid_size=500, grid_step=4)
     #path_2, planning_method = planner.select_random_planner(start_pos, goal_pos, obstacles, return_method=True)
-    path_2 = planner.rrt(start_pos,goal_pos,obstacles)
+    path_2 = planner.rrt(start_pos, goal_pos, obstacles)
 
     path_index = 0
     trajectory = []
     all_paths = [np.array(path_2[:path_index + 1])]  # Initialize to include start point
     user_goal_path = []
+    v_old = [0.0, 0.0]
 
     previous_error = 0
     total_error = 0
 
     k_p = 100.0
-    k_d = 1.0
+    k_d = 5.0
     k_i = 0.5
 
-    max_pid_output = 5000.0
-    min_pid_output = -5000.0
-
+    # Main loop
     start_time = time.time()
+    success = True
     time_steps = 0
     while running:
         for event in pygame.event.get():
@@ -157,45 +143,39 @@ for i in range(10):
             # PID controller
             error_pos = particle_pos - path_2[path_index + 1]
             error_delta = error_pos - previous_error
-            total_error += error_pos
+            total_error += error_pos  # Accumulated error
             previous_error = error_pos
             u = k_p * error_pos + k_d * error_delta + k_i * total_error
-
-            u = np.clip(u, min_pid_output, max_pid_output)
-
             user_goal = particle_pos - u * delta_t
             user_goal_path.append(user_goal)
-
             iteration_start_time = time.time()
-            v = v_star(particle_pos, user_goal, obstacles, alpha=100.0, delta=delta, rho_0=rho_0)
-
+            v = qp_solver(particle_pos, user_goal, obstacles, alpha=100.0,
+                          v_max=v_max, K=K, d_obs=d)
 
             v_magnitude = np.linalg.norm(v)
             v_direction = v / (v_magnitude + 1e-5)
             if np.linalg.norm(v_direction) == 0:
                 v_direction = np.zeros(2)
-            if v_magnitude > v_max:
-                v = v_direction * v_max
             path_direction = (user_goal - particle_pos) / np.linalg.norm(user_goal - particle_pos)
             angle_diff = angle_between(v_direction, path_direction)
             if angle_diff > angle_threshold:
-                print("Particle1")
                 #new_path = np.array(planner.select_random_planner(particle_pos, goal_pos, obstacles, method=planning_method))
-                new_path = np.array(planner.rrt(start_pos,goal_pos,obstacles))
-                all_paths.append(np.array(path_2[:path_index]))
+                new_path = planner.rrt(start_pos, goal_pos, obstacles)
+                all_paths.append(np.array(path_2[:path_index]))  # Save traversed path segments
                 path_2 = new_path
                 path_index = 0
             else:
                 particle_pos += v * delta_t
                 iteration_end_time = time.time()
                 path_index += 1
-
-                all_paths[-1] = np.append(all_paths[-1], [path_2[path_index]], axis=0)
+                all_paths[-1] = np.append(all_paths[-1], [path_2[path_index]], axis=0)  # Update the latest path segment
         else:
             user_goal = goal_pos
+
             user_goal_path.append(user_goal)
             iteration_start_time = time.time()
-            v = v_star(particle_pos, user_goal, obstacles, alpha=100.0, delta=delta, rho_0=rho_0)
+            v = qp_solver(particle_pos, user_goal, obstacles, alpha=100.0,
+            v_max=v_max, K=K, d_obs=d)
             v_magnitude = np.linalg.norm(v)
             v_direction = v / (v_magnitude + 1e-5)
             if np.linalg.norm(v_direction) == 0:
@@ -204,13 +184,12 @@ for i in range(10):
                 v = v_direction * v_max
             particle_pos += v * delta_t
             iteration_end_time = time.time()
-
+        iteration_duration = iteration_end_time - iteration_start_time
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
         particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
-        iteration_duration = iteration_end_time - iteration_start_time
+
         timestamp = time.time() - start_time
         collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
-
         if collision or time_steps > 10:
             success = False
 
@@ -225,8 +204,8 @@ for i in range(10):
 
         trajectory.append(particle_pos.copy())
         if np.linalg.norm(particle_pos - goal_pos) < 5:
-            pygame.image.save(screen, f"/Users/yuanzhengsun/Desktop/CBF_sim/CBF/paper_pic/APF+CBF{i}_rrt.png")
             print("Particle reached goal")
+            pygame.image.save(screen, f"/Users/yuanzhengsun/Desktop/CBF_sim/CBF/paper_pic/CBF{i}_rrt.png")
             break
         screen.fill(WHITE)
         # Draw obstacles
@@ -247,7 +226,7 @@ for i in range(10):
         # Draw all path segments
         for path in all_paths:
             for j in range(1, len(path)):
-                pygame.draw.line(screen, [150, 150, 150], path[j - 1].astype(int), path[j].astype(int), 3)
+                pygame.draw.line(screen, [150, 150, 150], np.array(path[j - 1]).astype(int), np.array(path[j]).astype(int), 3)
 
         # Draw user goal path
         for j in range(1, len(user_goal_path)):
@@ -256,14 +235,14 @@ for i in range(10):
         pygame.display.flip()
         pygame.time.delay(50)
 
-        if not success:
-            break
 
         time_steps += delta_t
 
 
     df = pd.DataFrame(data)
-    path = f"./APF+CBF_motion_planner_rrt/rrt_{i}.csv"
+    path = f"./CBF_motion_planner_rrt/rrt_{i}.csv"
     df.to_csv(path, index=False)
+    print(f"Data saved to {i}.csv")
 
 pygame.quit()
+
