@@ -98,7 +98,7 @@ BLUE = (0, 0, 255)
 
 delta_t = 0.01
 particle_speed = 500
-alpha = 20.0
+alpha = 1.0
 for i in range(10):
     data = {
         "delta_t":[],
