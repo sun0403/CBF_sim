@@ -222,7 +222,7 @@ for i in range(10):
     df = pd.DataFrame(data)
     #path = f"./l/APF/{i}.csv"
     #path = f"./APF_csv/{i}.csv"
-    path=os.path.join(path, f"APF{i}.csv")
+    path=os.path.join(data_folder, f"APF{i}.csv")
     df.to_csv(path, index=False)
     print(f"Data saved to {i}.csv")
 
