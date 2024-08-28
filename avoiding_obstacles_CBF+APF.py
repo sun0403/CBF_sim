@@ -1,8 +1,17 @@
 import pygame
 import numpy as np
-import sys
+import os
 import time
 import pandas as pd
+
+username = input("Name: ")
+
+pic_folder = f"./{username}_pic"
+data_folder = f"./{username}_data"
+
+os.makedirs(pic_folder, exist_ok=True)
+os.makedirs(data_folder, exist_ok=True)
+
 
 
 np.random.seed(76)
@@ -89,7 +98,7 @@ BLUE = (0, 0, 255)
 
 delta_t = 0.01
 particle_speed = 500
-alpha = 1.0
+alpha = 20.0
 for i in range(10):
     data = {
         "delta_t":[],
@@ -133,6 +142,9 @@ for i in range(10):
     running = True
     success = True
     user_goal = np.array([0.0,0.0])
+
+    trajectory = []
+    user_goal_path = []
     start_time = time.time()
     time_steps = 0
     while running:
@@ -185,15 +197,17 @@ for i in range(10):
         if not any_key_pressed:
             velocity *= 0.0
 
-
-
+        iteration_start_time = time.time()
         user_goal = particle_pos + velocity * delta_t
+        user_goal_path.append(user_goal)
         v = v_star(particle_pos, user_goal, obstacles, alpha, delta=1.0, rho_0=rho_0)
         v = np.clip(v, -500, 500)
         particle_pos += v*0.01
+        iteration_end_time = time.time()
 
 
         timestamp = time.time() - start_time
+        iteration_duration = iteration_end_time - iteration_start_time
         collision = any(np.linalg.norm(particle_pos - obs['position']) < obs['radius'] for obs in obstacles)
 
         if collision or time_steps > 10:
@@ -201,7 +215,7 @@ for i in range(10):
 
 
         data["delta_t"].append(delta_t)
-        data["time_steps"].append(time_steps)
+        data["time_steps"].append(iteration_duration)
         data["timestamp"].append(timestamp)
         data["particle_position"].append(particle_pos.tolist())
         data["user_goal"].append(user_goal.tolist())
@@ -215,23 +229,33 @@ for i in range(10):
         print(f'Desired user velocity: {velocity}')
         print(f'Actual velocity from v: {v}')
 
+        user_path = os.path.join(pic_folder, f"APF+CBF{i}.png")
         if np.linalg.norm(particle_pos - target_goal) < 5:
             print("Particle reached goal")
+            #pygame.image.save(screen, f"/Users/yuanzhengsun/Desktop/CBF_sim/CBF/paper_pic/CBF+APF{i}.png")
+            pygame.image.save(screen, user_path)
             break
+
 
         particle_pos[0] = np.clip(particle_pos[0], 0, screen_width)
         particle_pos[1] = np.clip(particle_pos[1], 0, screen_height)
 
+        trajectory.append(particle_pos.copy())
+
         screen.fill(WHITE)
 
         pygame.draw.circle(screen, GREEN, start_pos.astype(int), 10)
-        pygame.draw.circle(screen, RED, goal_pos.astype(int), 10)
+
 
         for obstacle in obstacles:
             pygame.draw.circle(screen, BLACK, obstacle['position'].astype(int), int(obstacle['radius']))
 
         pygame.draw.circle(screen, BLUE, particle_pos.astype(int), 5)
         pygame.draw.circle(screen, BLUE, target_goal.astype(int), 2)
+        for j in range(1, len(user_goal_path)):
+            pygame.draw.line(screen, BLUE, user_goal_path[j - 1].astype(int), user_goal_path[j].astype(int), 2)
+        for j in range(1, len(trajectory)):
+            pygame.draw.line(screen, RED, trajectory[j - 1].astype(int), trajectory[j].astype(int), 2)
         pygame.display.flip()
         pygame.time.delay(50)
         time_steps += delta_t
@@ -240,7 +264,8 @@ for i in range(10):
 
     df=pd.DataFrame(data)
     #path=f"./l/APF+CBF/{i}.csv"
-    path=f"./CBF+APF_csv/{i}.csv"
+    #path=f"./CBF+APF_csv/{i}.csv"
+    path = os.path.join(data_folder, f"APF+CBF{i}.csv")
     df.to_csv(path, index=False)
     print("Data saved to APF+CBF.csv")
 pygame.quit()
